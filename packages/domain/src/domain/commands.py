@@ -37,6 +37,8 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
         ctype = raw.get("type")
         if ctype == "set_pool_dimensions":
             cmd = SetPoolDimensions(**raw)
+            if cmd.water_length_m is None and cmd.water_width_m is None and cmd.water_depth_m is None:
+                raise CommandError("set_pool_dimensions stated no dimension")
             if snap.pool is None:
                 raise CommandError("project has no pool system")
             for field in ("water_length_m", "water_width_m", "water_depth_m"):

@@ -1,12 +1,40 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
 export default function Villa3D({ snap, level }: { snap: any; level: string }) {
+  // Force the WebGL drawing buffer to the measured panel size. Without this,
+  // R3F can leave the buffer at the 300x150 canvas default in some browsers,
+  // which CSS then stretches into a blurry image.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef<any>(null);
+  const [size, setSize] = useState({ w: 760, h: 520 });
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = Math.max(300, el.clientWidth), h = 520;
+      setSize({ w, h });
+      // R3F only pushes size into the GL buffer when the size CHANGES after
+      // its subscription registers; the initial size can be missed, leaving
+      // the buffer at 300x150 (blurry when CSS-stretched). Nudge by 1px and
+      // back to force the update through.
+      const s = stateRef.current;
+      if (s) {
+        s.setSize(w - 1, h, 0, 0);
+        requestAnimationFrame(() => s.setSize(w, h, 0, 0));
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const lvl = snap.levels.find((l: any) => l.name === level);
   const spaces = snap.spaces.filter((s: any) => s.level_id === lvl.id);
   return (
-    <div style={{ width: "100%", height: 520, position: "relative" }}>
+    <div ref={wrapRef} style={{ width: "100%", height: 520, position: "relative" }}>
       {snap.pool && level === "basement" && (
         <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: "rgba(10,18,26,0.82)",
                       color: "#a5f3fc", padding: "6px 10px", fontSize: 13, border: "1px solid #155e75" }}>
@@ -14,7 +42,14 @@ export default function Villa3D({ snap, level }: { snap: any; level: string }) {
           {" "}(bright slab on the hall block)
         </div>
       )}
-      <Canvas camera={{ position: [16, 15, 16], fov: 50 }} dpr={1}
+      <Canvas camera={{ position: [16, 15, 16], fov: 50 }}
+        style={{ width: size.w, height: size.h }}
+        onCreated={(s) => {
+          stateRef.current = s;
+          const { width, height, top, left } = s.size;
+          s.setSize(width - 1, height, top, left);
+          requestAnimationFrame(() => s.setSize(width, height, top, left));
+        }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}>
         <color attach="background" args={["#1a222c"]} />
         <ambientLight intensity={1.2} />

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Rect, Text, Group } from "react-konva";
+import { Stage, Layer, Rect, Text, Group, Line } from "react-konva";
 
 export default function Plan2D({ snap, level, selected, onSelect, onMove }: any) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -14,12 +14,17 @@ export default function Plan2D({ snap, level, selected, onSelect, onMove }: any)
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const S = (wrapW - 20) / 18; // px per metre, fits the 18 m plate to the panel
+  const S = (wrapW - 56) / 18; // px per metre, fits plate + dimension margins
+  const areaOf = (poly: number[][]) => {
+    let a = 0;
+    for (let i = 0; i < poly.length - 1; i++) a += poly[i][0] * poly[i + 1][1] - poly[i + 1][0] * poly[i][1];
+    return Math.abs(a / 2);
+  };
   const lvl = snap.levels.find((l: any) => l.name === level);
   const spaces = snap.spaces.filter((s: any) => s.level_id === lvl.id);
   return (
     <div ref={wrapRef} className="ns-plan-wrap">
-      <Stage width={wrapW} height={15.5 * S + 20} style={{ background: "#f7f5ef", maxWidth: "100%" }}>
+      <Stage width={wrapW} height={15.5 * S + 64} style={{ background: "#f7f5ef", maxWidth: "100%" }}>
         <Layer>
           {spaces.map((s: any) => {
             const xs = s.polygon.map((p: number[]) => p[0]);
@@ -41,8 +46,12 @@ export default function Plan2D({ snap, level, selected, onSelect, onMove }: any)
                     onMove && onMove(s.id, dx, dy);
                   }}
                   onClick={() => onSelect(s.id)} onTap={() => onSelect(s.id)} />
-                <Text x={10 + x * S + 4} y={10 + sy * S + d * S / 2 - 6} width={Math.max(w * S - 8, 10)}
+                <Text x={10 + x * S + 4} y={10 + sy * S + d * S / 2 - 13} width={Math.max(w * S - 8, 10)}
                   text={s.name} fontSize={Math.max(8, Math.min(11, S * 0.38))} fill="#1c2733" align="center"
+                  onClick={() => onSelect(s.id)} />
+                <Text x={10 + x * S + 4} y={10 + sy * S + d * S / 2 + 3} width={Math.max(w * S - 8, 10)}
+                  text={`${areaOf(s.polygon).toFixed(1)} m²`}
+                  fontSize={Math.max(7, Math.min(9.5, S * 0.32))} fill="#5d6a78" align="center"
                   onClick={() => onSelect(s.id)} />
               </Group>
             );
@@ -59,6 +68,17 @@ export default function Plan2D({ snap, level, selected, onSelect, onMove }: any)
                 fontSize={11} fill="#1d6fd1" />
             </>
           )}
+          {/* envelope dimensions */}
+          <Line points={[10, 15.5 * S + 34, 10 + 18 * S, 15.5 * S + 34]} stroke="#26303c" strokeWidth={1} />
+          <Line points={[10, 15.5 * S + 28, 10, 15.5 * S + 40]} stroke="#26303c" strokeWidth={1} />
+          <Line points={[10 + 18 * S, 15.5 * S + 28, 10 + 18 * S, 15.5 * S + 40]} stroke="#26303c" strokeWidth={1} />
+          <Text x={10 + 8 * S} y={15.5 * S + 40} text="18.0 m" fontSize={11} fill="#26303c" />
+          <Text x={10 + 18 * S + 8} y={10 + 7.4 * S} text="15.5 m" fontSize={11} fill="#26303c" rotation={90} />
+          {/* scale bar: 5 m */}
+          <Rect x={10} y={15.5 * S + 52} width={5 * S} height={4} fill="#26303c" />
+          <Text x={10} y={15.5 * S + 57} text="0        5 m" fontSize={9} fill="#26303c" />
+          {/* north point */}
+          <Text x={wrapW - 34} y={12} text="N ↑" fontSize={14} fontStyle="bold" fill="#26303c" />
         </Layer>
       </Stage>
     </div>

@@ -369,7 +369,8 @@ def post_export(project_id: str, body: ExportBody, request: Request,
     results = compute_results(snap)
     export_id = new_id()
     basis = {"export_id": export_id, "project_id": project_id,
-             "revision_id": snap.revision_id, "content_hash": snap.content_hash,
+             "revision_id": snap.revision_id, "revision_number": snap.revision_number,
+             "content_hash": snap.content_hash,
              "result_method_ids": [r["method_id"] for r in results],
              "report_template_version": "0.2.0"}
     basis_hash = hashlib.sha256(_json.dumps(basis, sort_keys=True).encode()).hexdigest()
@@ -403,6 +404,39 @@ def get_artifact(artifact_id: str, nodesnap_session: str | None = Cookie(default
             return FileResponse(path, media_type=media,
                                 filename=f"nodesnap-{artifact_id}.{ext}")
     raise HTTPException(404, "artifact not found")
+
+
+class RestoreBody(BaseModel):
+    base_revision_id: str
+    target_revision_id: str
+
+
+@app.post("/api/v1/projects/{project_id}/restore")
+def post_restore(project_id: str, body: RestoreBody, request: Request,
+                 nodesnap_session: str | None = Cookie(default=None)):
+    """Restore an earlier revision's content as a new revision (undo/redo).
+    History is never rewritten; the restored revision's parent is the head
+    it replaces."""
+    actor = get_actor(nodesnap_session)
+    db = Session(); proj = own_project(db, actor, project_id)
+    if proj.current_revision_id != body.base_revision_id:
+        db.close(); raise HTTPException(412, "stale base revision; reload current revision")
+    target = load_snapshot(db, project_id, body.target_revision_id)
+    import copy as _copy
+    restored = _copy.deepcopy(target)
+    cur = load_snapshot(db, project_id, body.base_revision_id)
+    restored.parent_revision_id = cur.revision_id
+    restored.revision_id = new_id()
+    restored.revision_number = cur.revision_number + 1
+    restored = restored.with_hash()
+    db.add(RevisionRow(revision_id=restored.revision_id, project_id=project_id,
+                       revision_number=restored.revision_number,
+                       snapshot_json=restored.model_dump_json()))
+    proj.current_revision_id = restored.revision_id
+    db.commit(); db.close()
+    return envelope({"revision_id": restored.revision_id,
+                     "revision_number": restored.revision_number,
+                     "restored_from_revision_number": target.revision_number}, request)
 
 
 class GenerateBody(BaseModel):

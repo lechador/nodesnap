@@ -70,6 +70,10 @@
 - Founder screenshot showed the fixed 320/1fr/330 grid overflowing on a narrow screen. Fixed: CSS breakpoints (<=1100px two columns with inspector below; <=760px single column stacking chat -> workspace -> inspector per spec A4), wrapping button rows, viewport meta + NodeSnap title, and the Konva plan now measures its panel and rescales (labels scale with it).
 - Verified: 390x844 no horizontal overflow (scrollWidth == innerWidth), stacked layout + plan fit inspected; 1440px three-column layout unchanged.
 
+### Full-site QA + redesign (2026-10-27, founder request)
+- Report: docs/qa-report-2026-10-27.md. Six bugs found by exercising every control; all fixed and re-verified in browser (notable: NaN empty-revision commit, undo ping-pong -> restore-based undo/redo, export revision_number, Retina DPR blur).
+- Design system + status strip + plan drawing content (room areas, dimensions, scale bar, north point). Visual review 6/10 credible prototype; top remaining gap is model-level (walls/doors/stair graphic), tracked below.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

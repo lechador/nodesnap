@@ -40,6 +40,15 @@ export default function Home() {
   const [artifact, setArtifact] = useState<any>(null);
   const [chat, setChat] = useState("");
   const [sending, setSending] = useState(false);
+  const [spend, setSpend] = useState<any>(null);
+  const undoStack = useState<string[]>([])[0];
+  const redoStack = useState<string[]>([])[0];
+  const [histTick, setHistTick] = useState(0);
+  function pushHistory(prevRevisionId: string) {
+    undoStack.push(prevRevisionId);
+    redoStack.length = 0;
+    setHistTick((x) => x + 1);
+  }
 
   async function load(pid: string, rid: string) {
     const s = await api(`/api/v1/projects/${pid}/revisions/${rid}`);
@@ -58,6 +67,7 @@ export default function Home() {
       const p = await api("/api/v1/projects", { method: "POST", body: JSON.stringify({ seed: true }) });
       setProjectId(p.project_id);
       await load(p.project_id, p.revision_id);
+      try { const h = await api("/health"); setSpend(h.spend); } catch { /* spend display is optional */ }
       setMsg("Seed villa loaded — Demo Villa NYC-01 (synthetic site, no real address).");
     } catch (e: any) { setMsg(`Error: ${e.message}`); }
   }
@@ -99,14 +109,20 @@ export default function Home() {
   }
 
   async function applyPool() {
+    const len = Number(poolLen);
+    if (!Number.isFinite(len) || len <= 0) {
+      setMsg(`Pool length "${poolLen}" is not a valid number — nothing was changed.`);
+      return;
+    }
     try {
       const out = await api(`/api/v1/projects/${projectId}/commands`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "If-Match": `"${snap.revision_id}"` },
         body: JSON.stringify({ base_revision_id: snap.revision_id,
-          commands: [{ type: "set_pool_dimensions", water_length_m: Number(poolLen) }] }),
+          commands: [{ type: "set_pool_dimensions", water_length_m: len }] }),
       });
       setArtifact(null);
+      pushHistory(snap.revision_id);
       await load(projectId, out.revision_id);
       setMsg(`Pool resized → revision ${out.revision_number}. Previous results invalidated and recalculated.`);
     } catch (e: any) { setMsg(`Edit rejected: ${e.message}`); }
@@ -121,6 +137,7 @@ export default function Home() {
           commands: [{ type: "move_space", element_id: id, dx_m: dx, dy_m: dy }] }),
       });
       setArtifact(null);
+      pushHistory(snap.revision_id);
       await load(projectId, out.revision_id);
       setMsg(`Room moved → revision ${out.revision_number}. Areas recalculated.`);
     } catch (e: any) { setMsg(`Move rejected — geometry restored: ${e.message}`); await load(projectId, snap.revision_id); }
@@ -136,18 +153,42 @@ export default function Home() {
         method: "POST", body: JSON.stringify({ base_revision_id: snap.revision_id, level, rooms }) });
       if (out.execution_status === "blocked") { setMsg(`Solver: ${out.issue.message}`); return; }
       setArtifact(null);
+      pushHistory(snap.revision_id);
       await load(projectId, out.revision_id);
       setMsg(`CP-SAT layout generated (${out.solver_status}) → revision ${out.revision_number}.`);
     } catch (e: any) { setMsg(`Generation failed: ${e.message}`); }
   }
 
   async function undo() {
+    const target = undoStack[undoStack.length - 1];
+    if (!target) { setMsg("Nothing to undo."); return; }
     try {
-      const out = await api(`/api/v1/projects/${projectId}/undo`, { method: "POST", body: "{}" });
+      const out = await api(`/api/v1/projects/${projectId}/restore`, {
+        method: "POST",
+        body: JSON.stringify({ base_revision_id: snap.revision_id, target_revision_id: target }) });
+      undoStack.pop();
+      redoStack.push(snap.revision_id);
+      setHistTick((x) => x + 1);
       setArtifact(null);
       await load(projectId, out.revision_id);
       setMsg(`Undone — restored revision ${out.restored_from_revision_number} as new revision ${out.revision_number}.`);
-    } catch (e: any) { setMsg(`Undo: ${e.message}`); }
+    } catch (e: any) { setMsg(`Undo failed: ${e.message}`); }
+  }
+
+  async function redo() {
+    const target = redoStack[redoStack.length - 1];
+    if (!target) { setMsg("Nothing to redo."); return; }
+    try {
+      const out = await api(`/api/v1/projects/${projectId}/restore`, {
+        method: "POST",
+        body: JSON.stringify({ base_revision_id: snap.revision_id, target_revision_id: target }) });
+      redoStack.pop();
+      undoStack.push(snap.revision_id);
+      setHistTick((x) => x + 1);
+      setArtifact(null);
+      await load(projectId, out.revision_id);
+      setMsg(`Redone — restored revision ${out.restored_from_revision_number} as new revision ${out.revision_number}.`);
+    } catch (e: any) { setMsg(`Redo failed: ${e.message}`); }
   }
 
   async function exportPdf() {
@@ -167,8 +208,10 @@ export default function Home() {
         setMsg(`Meta ${r.execution_status}: ${r.issue?.message ?? "no proposal"}`);
         return;
       }
+      try { const h = await api("/health"); setSpend(h.spend); } catch { /* optional */ }
       if (r.committed_revision_id) {
         setArtifact(null);
+        pushHistory(snap.revision_id);
         await load(projectId, r.committed_revision_id);
         setMsg(`Meta (${r.model}) → ${r.proposal.intent} committed as revision ${r.committed_revision_number}. ${r.explanation}`);
       } else {
@@ -189,12 +232,12 @@ export default function Home() {
       <header className="ns-header" style={{ background: "#20262e", color: "#f2efe8", padding: "14px 22px" }}>
         <div>
           <span style={{ fontSize: 26, letterSpacing: 0.5 }}>NodeSnap</span>
-          <span style={{ marginLeft: 14, opacity: 0.75, fontSize: 13 }}>
+          <span className="ns-tagline" style={{ marginLeft: 14, opacity: 0.75, fontSize: 13 }}>
             Describe a home → coordinated design, real calculations, professional review package
           </span>
         </div>
-        <div style={{ fontSize: 13 }}>
-          {snap ? <>Revision {snap.revision_number} · <code>{snap.content_hash.slice(0, 10)}…</code></> : "…"}
+        <div className="ns-head-actions" style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          {snap ? <span className="ns-chip">Revision {snap.revision_number} · {snap.content_hash.slice(0, 8)}</span> : "…"}
           <button onClick={exportPdf} disabled={!snap}
             style={{ marginLeft: 16, background: "#c96f2e", color: "white", border: 0, padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap" }}>
             Export review PDF
@@ -214,7 +257,7 @@ export default function Home() {
             Quantities below are demonstration assumptions unless labelled derived.
           </p>
           <h4>Conversation</h4>
-          <textarea value={chat} onChange={(e) => setChat(e.target.value)} rows={3}
+          <textarea className="ns-field" value={chat} onChange={(e) => setChat(e.target.value)} rows={3}
             placeholder="Describe your home, or ask for a change…"
             style={{ width: "100%", boxSizing: "border-box", padding: 8 }} />
           <div className="ns-btn-row" style={{ marginTop: 8 }}>
@@ -232,23 +275,26 @@ export default function Home() {
 
           <h4>Try a real change</h4>
           <label style={{ fontSize: 13 }}>Pool water length (m)
-            <input value={poolLen} onChange={(e) => setPoolLen(e.target.value)}
-              style={{ width: 70, marginLeft: 8, padding: 5 }} />
+            <input className="ns-field" value={poolLen} onChange={(e) => setPoolLen(e.target.value)}
+              style={{ width: 76, marginLeft: 8 }} />
           </label>
           <button onClick={applyPool} disabled={!snap}
             style={{ marginLeft: 8, padding: "7px 12px", cursor: "pointer" }}>Apply</button>
           <p style={{ fontSize: 12.5 }}>Commits a typed command, creates a new revision, reruns pool + area calculations.</p>
 
           <h4>Generate / history</h4>
+          <div className="ns-btn-row">
           <button onClick={regenerate} disabled={!snap} style={{ padding: "7px 12px", cursor: "pointer" }}>
             Regenerate {level} layout (CP-SAT)
           </button>
-          <button onClick={undo} disabled={!snap} style={{ marginLeft: 8, padding: "7px 12px", cursor: "pointer" }}>Undo</button>
+          <button onClick={undo} disabled={!snap || undoStack.length === 0} style={{ padding: "7px 12px", cursor: "pointer" }}>Undo</button>
+          <button onClick={redo} disabled={!snap || redoStack.length === 0} style={{ padding: "7px 12px", cursor: "pointer" }}>Redo</button>
+          </div>
           <p style={{ fontSize: 12.5 }}>In the plan: click a room to select it, then drag it. Moves snap to 0.1 m;
             overlapping or out-of-plate moves are rejected and the room is restored.</p>
 
           {artifact && (
-            <p style={{ fontSize: 13 }}>
+            <p className="ns-card ns-export" style={{ fontSize: 13 }}>
               <a href={`/artifacts/${artifact.artifact_id}`}>Download PDF — revision {artifact.revision_number}</a>
               <br />SHA-256 {artifact.file_sha256.slice(0, 16)}… · {artifact.document_presence} · {artifact.review_status}
               <br />Sheets: {artifact.sheets?.join(" · ")}
@@ -271,7 +317,7 @@ export default function Home() {
             {(["plan", "3d"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)}
                 style={{ padding: "7px 12px", cursor: "pointer", fontWeight: view === v ? 700 : 400,
-                         background: view === v ? "#c96f2e" : "white", color: view === v ? "white" : "#26303c", border: "1px solid #c96f2e" }}>
+                         background: view === v ? "#26303c" : "white", color: view === v ? "white" : "#26303c", border: "1px solid #26303c" }}>
                 {v === "plan" ? "Plan" : "3D"}
               </button>
             ))}
@@ -295,22 +341,22 @@ export default function Home() {
 
           <h4>Pool calculation (real, deterministic)</h4>
           {poolQ ? (
-            <table cellPadding={3} style={{ borderCollapse: "collapse" }}>
+            <table className="ns-tbl">
               <tbody>
                 <tr><td>Surface</td><td><b>{poolQ.surface_area_m2.toFixed(2)} m²</b></td></tr>
                 <tr><td>Volume</td><td><b>{poolQ.volume_m3.toFixed(2)} m³</b></td></tr>
                 <tr><td>Water mass</td><td><b>{poolQ.mass_kg.toLocaleString()} kg</b></td></tr>
                 <tr><td>Water weight</td><td><b>{poolQ.weight_n.toLocaleString(undefined, { maximumFractionDigits: 0 })} N</b></td></tr>
-                <tr><td>Max hydrostatic pressure</td><td><b>{poolQ.max_hydrostatic_pressure_pa.toFixed(0)} Pa</b></td></tr>
+                <tr><td>Max hydrostatic pressure</td><td><b>{poolQ.max_hydrostatic_pressure_pa.toLocaleString(undefined, { maximumFractionDigits: 0 })} Pa</b></td></tr>
               </tbody>
             </table>
           ) : <p>Not calculated yet.</p>}
-          <p style={{ color: "#6b5a43" }}>Method <code>pool_quantities</code> — physics only, not pool-shell design.
+          <p className="ns-note">Method <code>pool_quantities</code> — physics only, not pool-shell design.
             Check outcome: <b>not_evaluated</b>. Input basis: demonstration_assumption.</p>
 
           <h4>Structure — gravity frame (PyNite, fixtures-verified adapter)</h4>
           {frameQ ? (
-            <table cellPadding={3} style={{ borderCollapse: "collapse" }}>
+            <table className="ns-tbl">
               <tbody>
                 <tr><td>Total gravity load</td><td><b>{(frameQ.total_applied_load_n / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} kN</b></td></tr>
                 <tr><td>Base reactions (sum)</td><td><b>{(frameQ.sum_base_reactions_n / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} kN</b></td></tr>
@@ -319,7 +365,7 @@ export default function Home() {
               </tbody>
             </table>
           ) : <p>Not calculated yet.</p>}
-          <p style={{ color: "#6b5a43" }}>Declared gravity scenario with assumed loads/sections.
+          <p className="ns-note">Declared gravity scenario with assumed loads/sections.
             Member, connection and lateral checks: <b>not_evaluated</b> (sourced methods still gated).</p>
 
           {bearQ && (
@@ -353,10 +399,18 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <p style={{ color: "#6b5a43" }}>Workflow and discipline completion are tracked separately.
+          <p className="ns-note">Workflow and discipline completion are tracked separately.
             Nothing above claims NYC code compliance, professional review, or DOB approval.</p>
         </aside>
       </div>
+      <footer className="ns-statusbar">
+        <span>Model revision <b>{snap ? snap.revision_number : "—"}</b></span>
+        <span>Results <b>{snap ? "current for this revision" : "—"}</b></span>
+        <span>Site <b>Demo Villa NYC-01 (synthetic)</b></span>
+        <span>Meta spend est. <b>{spend ? `$${spend.est_total_usd.toFixed(2)} / $${spend.ceiling_usd}` : "—"}</b></span>
+        <span>Review <b>unreviewed</b></span>
+        <span>Authority <b>not submitted</b></span>
+      </footer>
     </div>
   );
 }
