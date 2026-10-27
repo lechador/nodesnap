@@ -43,5 +43,9 @@
 - M2 next: CP-SAT generation, wall/door model, drag editing, undo.
 
 ## Blockers
-- META_API_KEY (founder) for live Meta verification.
+- ~~META_API_KEY~~ **Resolved 2026-10-27:** key in `.env` (gitignored); `GET /models` 200 with
+  muse-wonder-1.0 / muse-voice-transcribe-1.0 / muse-spark-1.3 / muse-image-1.0 present;
+  live conversation through the app returned a real reply (417 tokens logged). Structured
+  proposal schema + tool loop still to wire. Local `.env` DATABASE_URL set to SQLite
+  (the copied Postgres URL crashed startup — no local `nodesnap` role).
 - Docker not installed locally → Compose untested on this Mac; dev runs processes directly.

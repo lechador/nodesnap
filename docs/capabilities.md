@@ -5,8 +5,8 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Capability | Planned | Implemented | Method state | Evidence | Gap |
 |---|---|---|---|---|---|
 | Canonical model + immutable revisions | yes | YES (M1) | — | — | M0/M1 |
-| Brief interpretation (Meta Wonder) | yes | no | research_required | — | needs META_API_KEY |
-| Microphone transcription (Meta) | yes | no | research_required | — | needs META_API_KEY |
+| Brief interpretation (Meta Wonder) | yes | PARTIAL (plain-text call) | implemented | Live /models 200 + real muse-wonder-1.0 reply via app, 2026-10-27 | structured proposal schema + tool loop still to wire |
+| Microphone transcription (Meta) | yes | no | implemented | muse-voice-transcribe-1.0 confirmed present in account model list | transcription endpoint not yet called with audio |
 | CP-SAT layout generation (2 topologies) | yes | PARTIAL (central-corridor strip grammar) | research_required | — | M2 |
 | Geometry/topology validation (Shapely) | yes | no | research_required | — | M1/M2 |
 | Typed commands, drag edit, undo, conflicts | yes | YES (move_space/set_pool_dimensions, 412/422 paths) | — | — | M2 |
