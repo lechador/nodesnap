@@ -66,6 +66,10 @@
 - docs/demo-runbook.md (3 rehearsed scenarios + recovery) and docs/deployment.md written. Compose worker removed — it referenced a not-yet-built module; Redis stays provisioned for the future RQ worker.
 - Three end-to-end scenarios rehearsed live during M1-M5 (seed/inspect/export; chat pool+room changes; drag rejection + pool edit + re-export).
 
+### Responsive pass (2026-10-27, founder report)
+- Founder screenshot showed the fixed 320/1fr/330 grid overflowing on a narrow screen. Fixed: CSS breakpoints (<=1100px two columns with inspector below; <=760px single column stacking chat -> workspace -> inspector per spec A4), wrapping button rows, viewport meta + NodeSnap title, and the Konva plan now measures its panel and rescales (labels scale with it).
+- Verified: 390x844 no horizontal overflow (scrollWidth == innerWidth), stacked layout + plan fit inspected; 1440px three-column layout unchanged.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

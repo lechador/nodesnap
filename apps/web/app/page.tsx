@@ -181,7 +181,7 @@ export default function Home() {
 
   return (
     <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#1c2733", background: "#ece9e2", minHeight: "100vh" }}>
-      <header style={{ background: "#20262e", color: "#f2efe8", padding: "14px 22px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <header className="ns-header" style={{ background: "#20262e", color: "#f2efe8", padding: "14px 22px" }}>
         <div>
           <span style={{ fontSize: 26, letterSpacing: 0.5 }}>NodeSnap</span>
           <span style={{ marginLeft: 14, opacity: 0.75, fontSize: 13 }}>
@@ -191,14 +191,14 @@ export default function Home() {
         <div style={{ fontSize: 13 }}>
           {snap ? <>Revision {snap.revision_number} · <code>{snap.content_hash.slice(0, 10)}…</code></> : "…"}
           <button onClick={exportPdf} disabled={!snap}
-            style={{ marginLeft: 16, background: "#c96f2e", color: "white", border: 0, padding: "8px 14px", cursor: "pointer", fontSize: 14 }}>
+            style={{ marginLeft: 16, background: "#c96f2e", color: "white", border: 0, padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap" }}>
             Export review PDF
           </button>
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr 330px", gap: 0, alignItems: "start" }}>
-        <aside style={{ padding: 18, borderRight: "1px solid #cfc9ba" }}>
+      <div className="ns-shell">
+        <aside className="ns-side" style={{ padding: 18, borderRight: "1px solid #cfc9ba" }}>
           <h3 style={{ marginTop: 0 }}>Brief</h3>
           <p style={{ fontSize: 14, lineHeight: 1.5 }}>
             Contemporary luxury villa, NYC demonstration. Two floors, six principal rooms per floor,
@@ -212,13 +212,15 @@ export default function Home() {
           <textarea value={chat} onChange={(e) => setChat(e.target.value)} rows={3}
             placeholder="Describe your home, or ask for a change…"
             style={{ width: "100%", boxSizing: "border-box", padding: 8 }} />
+          <div className="ns-btn-row" style={{ marginTop: 8 }}>
           <button onClick={sendChat} disabled={!snap || !chat}
-            style={{ marginTop: 8, padding: "7px 12px", cursor: "pointer" }}>Send to Meta</button>
+            style={{ padding: "9px 12px", cursor: "pointer" }}>Send to Meta</button>
           <button onClick={toggleMic} disabled={!snap}
-            style={{ marginLeft: 8, marginTop: 8, padding: "7px 12px", cursor: "pointer",
+            style={{ padding: "9px 12px", cursor: "pointer",
                      background: recording ? "#b3352c" : "white", color: recording ? "white" : "#26303c" }}>
             {recording ? "■ Stop recording" : "🎙 Record (Meta transcription)"}
           </button>
+          </div>
           <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#5a4632" }}>{msg}</p>
 
           <h4>Try a real change</h4>
@@ -249,7 +251,7 @@ export default function Home() {
           )}
         </aside>
 
-        <main style={{ padding: 18 }}>
+        <main className="ns-main" style={{ padding: 18 }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {LEVELS.map((l) => (
               <button key={l} onClick={() => setLevel(l)}
@@ -277,7 +279,7 @@ export default function Home() {
           </p>
         </main>
 
-        <aside style={{ padding: 18, borderLeft: "1px solid #cfc9ba", fontSize: 13.5 }}>
+        <aside className="ns-inspector" style={{ padding: 18, borderLeft: "1px solid #cfc9ba", fontSize: 13.5 }}>
           <h3 style={{ marginTop: 0 }}>Inspector</h3>
           {sel ? (
             <p><b>{sel.name}</b><br />Use: {sel.use} · {sel.classification}<br />

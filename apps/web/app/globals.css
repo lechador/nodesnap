@@ -47,3 +47,34 @@ a {
     color-scheme: dark;
   }
 }
+
+/* NodeSnap responsive workspace (spec A4: desktop-first; smaller screens keep
+   chat, review and documents usable) */
+.ns-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 340px;
+  align-items: start;
+}
+.ns-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ns-main { min-width: 0; }
+.ns-plan-wrap { width: 100%; overflow: hidden; }
+.ns-btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ns-btn-row button { flex: 0 1 auto; }
+@media (max-width: 1100px) {
+  .ns-shell { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ns-inspector { grid-column: 1 / -1; border-left: none !important; border-top: 1px solid #cfc9ba; }
+}
+@media (max-width: 760px) {
+  .ns-shell { grid-template-columns: minmax(0, 1fr); }
+  .ns-side { border-right: none !important; border-bottom: 1px solid #cfc9ba; }
+  .ns-inspector { grid-column: auto; }
+  .ns-header { align-items: flex-start; }
+  .ns-btn-row button { flex: 1 1 44%; }
+  input, textarea, button { font-size: 16px; } /* stop iOS focus zoom */
+}
