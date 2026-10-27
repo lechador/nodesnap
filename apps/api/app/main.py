@@ -208,12 +208,7 @@ class AnalysisBody(BaseModel):
     disciplines: list[str] = ["pool", "architecture"]
 
 
-@app.post("/api/v1/projects/{project_id}/analyses")
-def post_analysis(project_id: str, body: AnalysisBody, request: Request,
-                  nodesnap_session: str | None = Cookie(default=None)):
-    actor = get_actor(nodesnap_session)
-    db = Session(); own_project(db, actor, project_id)
-    snap = load_snapshot(db, project_id, body.revision_id)
+def compute_results(snap) -> list[dict]:
     results = []
     if snap.pool:
         q = pool_quantities(snap.pool.water_length_m, snap.pool.water_width_m, snap.pool.water_depth_m)
@@ -264,6 +259,16 @@ def post_analysis(project_id: str, body: AnalysisBody, request: Request,
                     "quantities": build_inventories(snap),
                     "issues": [{"code": "UNVERIFIED_SOURCE", "field": "code_sizing_methods",
                                 "message": "Inventories and component quantities only; code sizing/ventilation/energy-pathway/hydraulic methods remain research_required."}]})
+    return results
+
+
+@app.post("/api/v1/projects/{project_id}/analyses")
+def post_analysis(project_id: str, body: AnalysisBody, request: Request,
+                  nodesnap_session: str | None = Cookie(default=None)):
+    actor = get_actor(nodesnap_session)
+    db = Session(); own_project(db, actor, project_id)
+    snap = load_snapshot(db, project_id, body.revision_id)
+    results = compute_results(snap)
     job_id = new_id()
     import json as _json
     db.add(JobRow(id=job_id, project_id=project_id, revision_id=snap.revision_id,
@@ -295,28 +300,47 @@ def post_export(project_id: str, body: ExportBody, request: Request,
     actor = get_actor(nodesnap_session)
     db = Session(); own_project(db, actor, project_id)
     snap = load_snapshot(db, project_id, body.revision_id); db.close()
-    pdf = build_review_pdf(snap)
+    # Freeze the export basis: every file below derives from THIS revision and
+    # THIS result set, computed once (spec S8). Basis hash is computed before
+    # file hashes exist; the manifest hash itself is stored externally.
+    import json as _json
+    results = compute_results(snap)
+    export_id = new_id()
+    basis = {"export_id": export_id, "project_id": project_id,
+             "revision_id": snap.revision_id, "content_hash": snap.content_hash,
+             "result_method_ids": [r["method_id"] for r in results],
+             "report_template_version": "0.2.0"}
+    basis_hash = hashlib.sha256(_json.dumps(basis, sort_keys=True).encode()).hexdigest()
+    pdf = build_review_pdf(snap, results)
     artifact_id = new_id()
-    path = ARTIFACT_ROOT / f"{artifact_id}.pdf"
-    path.write_bytes(pdf)
-    manifest = {"artifact_id": artifact_id, "project_id": project_id,
-                "revision_id": snap.revision_id, "revision_number": snap.revision_number,
-                "content_hash": snap.content_hash,
+    (ARTIFACT_ROOT / f"{artifact_id}.pdf").write_bytes(pdf)
+    model_id = new_id()
+    (ARTIFACT_ROOT / f"{model_id}.json").write_text(snap.model_dump_json(indent=1))
+    manifest = {"artifact_id": artifact_id, "model_artifact_id": model_id,
+                **basis, "export_basis_hash": basis_hash,
                 "file_sha256": hashlib.sha256(pdf).hexdigest(),
+                "model_sha256": hashlib.sha256(snap.model_dump_json(indent=1).encode()).hexdigest(),
                 "document_presence": "generated", "review_status": "unreviewed",
-                "authority_process": "not_submitted"}
-    (ARTIFACT_ROOT / f"{artifact_id}.json").write_text(str(manifest))
+                "authority_process": "not_submitted",
+                "sheets": ["COVER", "C-101", "A-101 basement", "A-102 ground", "A-103 upper",
+                           "A-104 roof", "CALC-101", "S-101", "F-101", "MPE-101", "REG-101"]}
+    manifest_id = new_id()
+    (ARTIFACT_ROOT / f"{manifest_id}.json").write_text(_json.dumps(manifest, indent=1))
+    manifest["manifest_artifact_id"] = manifest_id
+    manifest["manifest_sha256_stored_externally"] = hashlib.sha256(
+        _json.dumps(manifest, indent=1).encode()).hexdigest()
     return envelope(manifest, request)
 
 
 @app.get("/artifacts/{artifact_id}")
 def get_artifact(artifact_id: str, nodesnap_session: str | None = Cookie(default=None)):
     get_actor(nodesnap_session)
-    path = ARTIFACT_ROOT / f"{artifact_id}.pdf"
-    if not path.exists():
-        raise HTTPException(404, "artifact not found")
-    return FileResponse(path, media_type="application/pdf",
-                        filename=f"nodesnap-{artifact_id}.pdf")
+    for ext, media in (("pdf", "application/pdf"), ("json", "application/json")):
+        path = ARTIFACT_ROOT / f"{artifact_id}.{ext}"
+        if path.exists():
+            return FileResponse(path, media_type=media,
+                                filename=f"nodesnap-{artifact_id}.{ext}")
+    raise HTTPException(404, "artifact not found")
 
 
 class GenerateBody(BaseModel):

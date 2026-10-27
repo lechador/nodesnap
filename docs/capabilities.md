@@ -22,7 +22,7 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Electrical loads + panel graph | yes | PARTIAL (connected load) | implemented | 24.3 kW connected, 101 A at declared 240 V, equipment as electrical inputs | demand factors, ampacity, panel graph, pool bonding gated |
 | Energy (2025 NYCECC pathway) | yes | PARTIAL (envelope ledger) | implemented | conduction ledger shared with HVAC | NYCECC pathway + compliance method gated |
 | Roof terrace + drainage/runoff | yes | PARTIAL (runoff scenario) | implemented | 7.36 L/s at assumed C=0.95/100mm/h, conversion stated | gutter/detention/connection sizing gated |
-| NYC site evidence adapters | yes | no | research_required | — | live API verification in M5 |
-| Drawing set + calc report PDFs | yes | PARTIAL (4 plans + calc page) | research_required | — | M1 (1 sheet) → M5 (all families) |
-| Export manifest + hashes | yes | no | — | — | M5 |
+| NYC site evidence adapters | yes | no | research_required | — | synthetic site only so far; adapters = next M5/M6 work |
+| Drawing set + calc report PDFs | yes | YES (11 sheets) | research_required | — | M1 (1 sheet) → M5 (all families) |
+| Export manifest + hashes | yes | YES | — | basis hash + PDF/model SHA-256 + manifest artifact verified by download |
 | Guest sessions, isolation, spend caps | yes | no | — | — | M6 |

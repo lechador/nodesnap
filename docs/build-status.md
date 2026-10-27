@@ -53,6 +53,10 @@
 - Inventories built from canonical spaces (bathrooms/kitchens/equipment); component math hand-checked in tests: conduction 600 W fixture case, runoff conversion exact, current I=P/V, fixture sums.
 - UI shows: electrical 24.3 kW connected (101 A @ declared 240 V), 11 fixtures / 74 L/min, envelope conduction 6.38 kW, roof runoff 7.36 L/s — each labelled with what remains gated. Pool environment method remains research_required (ASHRAE transcription gate).
 
+### M5 review package (2026-10-27)
+- Export is now an 11-sheet package: COVER (NYC D1 profile, blank job/seal fields) · C-101 synthetic site · A-101-104 plans · CALC-101 pool+areas · S-101 frame reactions · F-101 bearing · MPE-101 services · REG-101 assumptions/methods/open issues. Cover and F-101 pages visually inspected: readable, no clipping.
+- Frozen basis: export computes its result set once from the named revision; basis hash precedes file hashes; manifest hash stored externally (no circular hashing). Manifest + canonical model JSON are downloadable artifacts alongside the PDF.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

@@ -12,4 +12,7 @@ members = ["apps/api", "packages/domain", "packages/geometry", "packages/enginee
 package = false
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pymupdf>=2.0",
+    "pytest>=8",
+]

@@ -189,6 +189,9 @@ export default function Home() {
             <p style={{ fontSize: 13 }}>
               <a href={`/artifacts/${artifact.artifact_id}`}>Download PDF — revision {artifact.revision_number}</a>
               <br />SHA-256 {artifact.file_sha256.slice(0, 16)}… · {artifact.document_presence} · {artifact.review_status}
+              <br />Sheets: {artifact.sheets?.join(" · ")}
+              <br /><a href={`/artifacts/${artifact.manifest_artifact_id}`}>Export manifest (JSON)</a>
+              {" · "}<a href={`/artifacts/${artifact.model_artifact_id}`}>Canonical model (JSON)</a>
             </p>
           )}
         </aside>
