@@ -41,17 +41,23 @@ METHODS: list[EngineeringMethod] = [
         source="ASHRAE indoor-pool guidance — exact method transcription still gated (spec E7/E16).",
         exclusions="No residential pool factor may be invented."),
     EngineeringMethod(
+        id="beam_analysis", discipline="structure",
+        purpose="Planar Euler-Bernoulli beam analysis (PyNiteFEA adapter) for declared support/load cases.",
+        method_state=MethodState.VERIFIED_FOR_SCOPE,
+        source="Spec E14 Fixtures A-C closed-form references; tests/test_m3_fixtures.py passes at rel_tol=1e-6.",
+        exclusions="Prismatic linear-elastic beams only; no shear-deformation, nonlinear or code design checks."),
+    EngineeringMethod(
         id="structural_frame_analysis", discipline="structure",
         purpose="Elastic frame analysis via PyNiteFEA adapter.",
-        method_state=MethodState.RESEARCH_REQUIRED,
-        source="Fixtures A-C must pass before integration (spec E14).",
-        exclusions="Nonlinear/second-order behaviour not covered by linear adapter."),
+        method_state=MethodState.IMPLEMENTED,
+        source="Beam adapter verified (Fixtures A-C); whole-frame idealization not yet independently reviewed.",
+        exclusions="Nonlinear/second-order behaviour, connections, diaphragms, lateral systems not covered."),
     EngineeringMethod(
         id="foundation_bearing_review", discipline="foundations",
         purpose="Reaction-based preliminary bearing scenario.",
-        method_state=MethodState.RESEARCH_REQUIRED,
-        source="Requires project geotechnical basis or explicit demo scenario (spec E6).",
-        exclusions="Settlement, uplift, reinforcement, excavation support."),
+        method_state=MethodState.IMPLEMENTED,
+        source="Uniform average-pressure scenario over the footprint with an explicitly assumed allowable bearing input (spec E6).",
+        exclusions="Settlement, uplift, reinforcement, excavation support; no geotechnical evidence in demo."),
 ]
 
 

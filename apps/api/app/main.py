@@ -228,6 +228,33 @@ def post_analysis(project_id: str, body: AnalysisBody, request: Request,
                     "review_status": "unreviewed", "revision_id": snap.revision_id,
                     "input_bases": ["derived"], "schedule": area_schedule(snap),
                     "geometry_issues": validate_spaces(snap.spaces)})
+    # Structure + foundations: real solver output, checks stay not_evaluated
+    # (implemented methods, unverified member/code checks — spec A6.3).
+    try:
+        from engineering.frame import build_villa_frame, foundation_bearing
+        frame = build_villa_frame()
+        results.append({"discipline": "structure", "method_id": "structural_frame_analysis",
+                        "method_state": "implemented", "execution_status": "completed",
+                        "check_outcome": "not_evaluated", "freshness_status": "current",
+                        "review_status": "unreviewed", "revision_id": snap.revision_id,
+                        "input_bases": ["demonstration_assumption"], "quantities": frame,
+                        "issues": [{"code": "UNVERIFIED_SOURCE", "field": "member_design_checks",
+                                    "message": "Elastic responses only; steel/timber member, connection and lateral checks require sourced methods."}]})
+        bearing = foundation_bearing(frame["sum_base_reactions_n"], 18.0 * 15.5, 100_000.0)
+        results.append({"discipline": "foundations", "method_id": "foundation_bearing_review",
+                        "method_state": "implemented", "execution_status": "completed",
+                        "check_outcome": "not_evaluated", "freshness_status": "current",
+                        "review_status": "unreviewed", "revision_id": snap.revision_id,
+                        "input_bases": ["demonstration_assumption"], "quantities": bearing,
+                        "issues": [{"code": "MISSING_INPUT", "field": "geotechnical_design_basis",
+                                    "message": "No project geotechnical basis; scenario uses an assumed 100 kPa allowable bearing."}]})
+    except Exception as e:
+        results.append({"discipline": "structure", "method_id": "structural_frame_analysis",
+                        "method_state": "implemented", "execution_status": "error",
+                        "check_outcome": "not_evaluated", "freshness_status": "current",
+                        "review_status": "unreviewed", "revision_id": snap.revision_id,
+                        "input_bases": ["demonstration_assumption"],
+                        "issues": [{"code": "UNSTABLE_MODEL", "message": f"frame analysis failed: {type(e).__name__}"}]})
     job_id = new_id()
     import json as _json
     db.add(JobRow(id=job_id, project_id=project_id, revision_id=snap.revision_id,

@@ -43,6 +43,12 @@
 - In the browser: typed 'make the pool 11 metres long' -> committed rev 2, inspector volume 53.90 m3 (exact).
 - Failure found and handled: model sometimes returned explain/garbled text for explicit changes -> strengthened prompt + one bounded controller repair re-ask. Unsupported requests (helipad) never mutate.
 
+### M3 structure (2026-10-27)
+- Fixtures first: independent closed-form references in tests/fixtures; PyNite adapter passes A/B/C at spec E14 tolerances + scaling/sign/invalid-input tests.
+- Baseline villa gravity frame (declared idealization, assumed loads/sections): equilibrium residual 1.5e-16, total 3,069 kN, max beam moment 102.3 kN-m, max beam deflection 45.8 mm — shown in UI as quantities with check not_evaluated.
+- Foundation bearing scenario: 11.00 kPa average vs assumed 100 kPa (utilization 0.11), geotech basis explicitly missing.
+- Found while testing: PyNite deflection_array returns [x, deflection] rows and node-only sampling measures column shortening — both fixed, tests guard them.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

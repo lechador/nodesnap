@@ -126,6 +126,8 @@ export default function Home() {
   }
 
   const poolQ = results.find((r) => r.method_id === "pool_quantities")?.quantities;
+  const frameQ = results.find((r) => r.method_id === "structural_frame_analysis")?.quantities;
+  const bearQ = results.find((r) => r.method_id === "foundation_bearing_review")?.quantities;
   const sel = snap?.spaces.find((s: any) => s.id === selected);
 
   return (
@@ -239,6 +241,29 @@ export default function Home() {
           ) : <p>Not calculated yet.</p>}
           <p style={{ color: "#6b5a43" }}>Method <code>pool_quantities</code> — physics only, not pool-shell design.
             Check outcome: <b>not_evaluated</b>. Input basis: demonstration_assumption.</p>
+
+          <h4>Structure — gravity frame (PyNite, fixtures-verified adapter)</h4>
+          {frameQ ? (
+            <table cellPadding={3} style={{ borderCollapse: "collapse" }}>
+              <tbody>
+                <tr><td>Total gravity load</td><td><b>{(frameQ.total_applied_load_n / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} kN</b></td></tr>
+                <tr><td>Base reactions (sum)</td><td><b>{(frameQ.sum_base_reactions_n / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} kN</b></td></tr>
+                <tr><td>Max beam moment</td><td><b>{(frameQ.max_beam_abs_moment_nm / 1000).toFixed(1)} kN·m</b></td></tr>
+                <tr><td>Max beam deflection</td><td><b>{(frameQ.max_floor_deflection_m * 1000).toFixed(1)} mm</b></td></tr>
+              </tbody>
+            </table>
+          ) : <p>Not calculated yet.</p>}
+          <p style={{ color: "#6b5a43" }}>Declared gravity scenario with assumed loads/sections.
+            Member, connection and lateral checks: <b>not_evaluated</b> (sourced methods still gated).</p>
+
+          {bearQ && (
+            <>
+              <h4>Foundations — bearing scenario</h4>
+              <p>Average pressure <b>{(bearQ.average_pressure_pa / 1000).toFixed(2)} kPa</b> vs assumed allowable{" "}
+                <b>{bearQ.assumed_allowable_bearing_pa / 1000} kPa</b> → utilization <b>{bearQ.utilization.toFixed(2)}</b>.
+                Uniform-pressure assumption only; no geotechnical evidence — real-project basis remains a missing input.</p>
+            </>
+          )}
 
           <h4>Coverage &amp; honest gaps</h4>
           <ul style={{ paddingLeft: 18, lineHeight: 1.6 }}>

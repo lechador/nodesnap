@@ -12,11 +12,11 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Typed commands, drag edit, undo, conflicts | yes | YES (move_space/set_pool_dimensions, 412/422 paths) | — | — | M2 |
 | Pool quantities (area/volume/mass/hydrostatic) | yes | YES (M1) | research_required | — | M1; physics only, not shell design |
 | Pool environment / evaporation | yes | no | research_required | — | method source gate (ASHRAE) open |
-| Structural fixtures A/B/C | yes | no | research_required | — | M3, before PyNite integration |
-| PyNite frame analysis | yes | no | research_required | — | M3 |
+| Structural fixtures A/B/C | yes | YES | verified_for_scope | tests/test_m3_fixtures.py at E14 tolerances (rel 1e-6) | planar beams only |
+| PyNite frame analysis | yes | YES | implemented | gravity frame: 3,069 kN applied = reactions, residual 1.5e-16; interior > corner columns | frame idealization unreviewed; no lateral/member checks |
 | Load ledger + combinations | yes | no | research_required | — | NYC/ASCE source gate open |
 | Steel/timber/RC design checks | yes | no | research_required | — | sourced methods required |
-| Foundations/basement scenarios | yes | no | research_required | — | no geotechnical evidence; demo assumptions only |
+| Foundations/basement scenarios | yes | PARTIAL (bearing scenario) | implemented | uniform-pressure scenario vs assumed 100 kPa in analyses + UI | settlement/uplift/reinforcement gated; no geotech evidence |
 | HVAC loads + ventilation | yes | no | research_required | — | sourced methods required |
 | Plumbing networks + demand | yes | no | research_required | — | sourced methods required |
 | Electrical loads + panel graph | yes | no | research_required | — | 2025 NYC Electrical method required |
