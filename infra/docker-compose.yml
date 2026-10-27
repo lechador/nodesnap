@@ -14,15 +14,6 @@ services:
     volumes: ["artifacts:/data/artifacts"]
     depends_on: [postgres, redis]
     ports: ["8000:8000"]
-  worker:
-    build: { context: .., dockerfile: infra/Dockerfile.api }
-    command: ["python", "-m", "app.worker"]
-    environment:
-      DATABASE_URL: "postgresql+psycopg://nodesnap:nodesnap@postgres:5432/nodesnap"
-      REDIS_URL: "redis://redis:6379/0"
-      ARTIFACT_ROOT: "/data/artifacts"
-    volumes: ["artifacts:/data/artifacts"]
-    depends_on: [postgres, redis]
   postgres:
     image: postgres:17
     environment: { POSTGRES_USER: nodesnap, POSTGRES_PASSWORD: nodesnap, POSTGRES_DB: nodesnap }

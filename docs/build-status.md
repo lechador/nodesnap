@@ -61,6 +61,11 @@
 - Correct endpoint is POST /v1/asr/transcribe (multipart request JSON + WAV; /audio/transcriptions and Responses input_audio both 404 with this model). Requires mono s16le 16/24 kHz WAV.
 - App endpoint + browser mic (MediaRecorder -> 16 kHz WAV in-page) verified: test speech transcribed exactly through the app. Wrong-endpoint probes and the format requirement are recorded here so they are not re-discovered.
 
+### M6 hardening (2026-10-27)
+- Spend ledger: every Meta call recorded with token/audio usage and estimated cost from the official pricing page (Wonder $4/$0.20/$20 per M, Transcribe $0.18/h); /health exposes totals vs the $135 ceiling, which blocks new model work while deterministic features continue. One chat call measured ~2,300 tokens = $0.0412.
+- docs/demo-runbook.md (3 rehearsed scenarios + recovery) and docs/deployment.md written. Compose worker removed — it referenced a not-yet-built module; Redis stays provisioned for the future RQ worker.
+- Three end-to-end scenarios rehearsed live during M1-M5 (seed/inspect/export; chat pool+room changes; drag rejection + pool edit + re-export).
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

@@ -66,6 +66,60 @@ class JobRow(Base):
     result_json = Column(Text, default="")
 
 
+class MetaUsageRow(Base):
+    __tablename__ = "meta_usage"
+    id = Column(String, primary_key=True)
+    created_at = Column(String)
+    kind = Column(String)  # conversation | transcription
+    model = Column(String)
+    input_tokens = Column(Integer, default=0)
+    cached_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+    audio_ms = Column(Integer, default=0)
+    est_cost_usd = Column(String, default="0")  # string to avoid float drift in ledger
+
+
+# Official Meta pricing verified on dev.meta.ai/docs/pricing-rate-limits (2026-10-27):
+# muse-wonder-1.0: $4.00/M input, $0.20/M cached input, $20.00/M output.
+# muse-voice-transcribe-1.0: $0.18 per audio hour. Provider billing is authoritative.
+WONDER_RATES = {"input": 4.00, "cached": 0.20, "output": 20.00}
+TRANSCRIBE_USD_PER_HOUR = 0.18
+
+
+def wonder_cost_usd(usage: dict) -> float:
+    inp = usage.get("input_tokens", 0) or 0
+    cached = (usage.get("input_tokens_details") or {}).get("cached_tokens", 0) or 0
+    out = usage.get("output_tokens", 0) or 0
+    return ((inp - cached) * WONDER_RATES["input"] + cached * WONDER_RATES["cached"]
+            + out * WONDER_RATES["output"]) / 1_000_000
+
+
+def spend_total_usd(db) -> float:
+    return sum(float(r.est_cost_usd) for r in db.query(MetaUsageRow).all())
+
+
+def record_usage(db, kind: str, model: str, usage: dict | None = None, audio_ms: int = 0):
+    usage = usage or {}
+    cost = wonder_cost_usd(usage) if kind == "conversation" else (audio_ms / 3_600_000) * TRANSCRIBE_USD_PER_HOUR
+    db.add(MetaUsageRow(
+        id=new_id(), created_at=datetime.now(timezone.utc).isoformat(), kind=kind, model=model,
+        input_tokens=usage.get("input_tokens", 0) or 0,
+        cached_tokens=(usage.get("input_tokens_details") or {}).get("cached_tokens", 0) or 0,
+        output_tokens=usage.get("output_tokens", 0) or 0,
+        audio_ms=audio_ms, est_cost_usd=f"{cost:.6f}"))
+    db.commit()
+    return cost
+
+
+def budget_blocked(db) -> dict | None:
+    ceiling = float(os.environ.get("APP_SPEND_CEILING_USD", "135"))
+    spent = spend_total_usd(db)
+    if spent >= ceiling:
+        return {"code": "BUDGET_CEILING", "field": "APP_SPEND_CEILING_USD",
+                "message": f"Estimated Meta spend ${spent:.2f} reached the ${ceiling:.2f} ceiling; new model work stopped, deterministic features remain available."}
+    return None
+
+
 class AnalysisRow(Base):
     __tablename__ = "analyses"
     id = Column(String, primary_key=True)
@@ -114,7 +168,15 @@ def own_project(db, actor_id: str, project_id: str) -> ProjectRow:
 
 @app.get("/health")
 def health(request: Request):
-    return envelope({"status": "ok", "meta": meta_status()}, request)
+    db = Session()
+    rows = db.query(MetaUsageRow).all()
+    spend = {"calls": len(rows), "est_total_usd": round(sum(float(r.est_cost_usd) for r in rows), 4),
+             "ceiling_usd": float(os.environ.get("APP_SPEND_CEILING_USD", "135")),
+             "input_tokens": sum(r.input_tokens for r in rows),
+             "output_tokens": sum(r.output_tokens for r in rows),
+             "pricing_basis": "dev.meta.ai/docs/pricing-rate-limits verified 2026-10-27; provider billing authoritative"}
+    db.close()
+    return envelope({"status": "ok", "meta": meta_status(), "spend": spend}, request)
 
 
 @app.post("/api/v1/demo/sessions")
@@ -427,6 +489,12 @@ async def transcription(project_id: str, request: Request,
     st = meta_status()
     if not st["configured"]:
         return envelope({"execution_status": "blocked", "issue": st["issue"], "text": None}, request)
+    db2 = Session()
+    blocked = budget_blocked(db2)
+    if blocked:
+        db2.close()
+        return envelope({"execution_status": "blocked", "issue": blocked, "text": None}, request)
+    db2.close()
     data = await audio.read()
     max_bytes = 32 * 1024 * 1024  # documented provider limit
     if len(data) > max_bytes:
@@ -448,9 +516,14 @@ async def transcription(project_id: str, request: Request,
     if j.get("error"):
         return envelope({"execution_status": "error", "text": None,
                          "issue": {"code": "PROVIDER_ERROR", "message": j["error"].get("message", "transcription error")}}, request)
+    db3 = Session()
+    record_usage(db3, "transcription", st["transcription_model"],
+                 audio_ms=j.get("audioDurationMs", 0) or 0)
+    spent = spend_total_usd(db3); db3.close()
     return envelope({"execution_status": "completed", "model": st["transcription_model"],
                      "text": j.get("transcript", ""), "session_id": j.get("sessionId"),
-                     "audio_duration_ms": j.get("audioDurationMs")}, request)
+                     "audio_duration_ms": j.get("audioDurationMs"),
+                     "spend_total_est_usd": round(spent, 4)}, request)
 
 
 class ConversationBody(BaseModel):
@@ -478,6 +551,11 @@ async def conversation(project_id: str, body: ConversationBody, request: Request
     pool_ctx = (f"pool water {snap.pool.water_length_m} x {snap.pool.water_width_m} x "
                 f"{snap.pool.water_depth_m} m" if snap.pool else "no pool")
     context = f"Revision {snap.revision_number}. {pool_ctx}. Principal rooms: {rooms_ctx}."
+    blocked = budget_blocked(db)
+    if blocked:
+        db.close()
+        return envelope({"base_revision_id": body.base_revision_id, "execution_status": "blocked",
+                         "issue": blocked, "proposal": None}, request)
     out = await propose(body.text, context)
     if out.get("execution_status") != "completed" or not out.get("proposal"):
         db.close()
@@ -498,8 +576,14 @@ async def conversation(project_id: str, body: ConversationBody, request: Request
         if out2.get("execution_status") == "completed" and out2.get("proposal"):
             out = out2
             p = out["proposal"]
+    if out.get("usage"):
+        record_usage(db, "conversation", out.get("model", "muse-wonder-1.0"), out["usage"])
+        result_spend = spend_total_usd(db)
+    else:
+        result_spend = spend_total_usd(db)
     result = {"base_revision_id": body.base_revision_id, "execution_status": "completed",
               "model": out.get("model"), "usage": out.get("usage"),
+              "spend_total_est_usd": round(result_spend, 4),
               "proposal": p, "explanation": p.get("explanation", ""),
               "committed_revision_id": None}
 

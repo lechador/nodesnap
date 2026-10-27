@@ -25,4 +25,4 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | NYC site evidence adapters | yes | no | research_required | — | synthetic site only so far; adapters = next M5/M6 work |
 | Drawing set + calc report PDFs | yes | YES (11 sheets) | research_required | — | M1 (1 sheet) → M5 (all families) |
 | Export manifest + hashes | yes | YES | — | basis hash + PDF/model SHA-256 + manifest artifact verified by download |
-| Guest sessions, isolation, spend caps | yes | no | — | — | M6 |
+| Guest sessions, isolation, spend caps | yes | YES | — | isolation verified (403 cross-session); spend ledger priced from official Meta page, ceiling blocks new model work at $135 | concurrent-call atomic reservation + rate limits = deployment hardening |
