@@ -39,6 +39,7 @@ export default function Home() {
   const [msg, setMsg] = useState("Starting demo session…");
   const [artifact, setArtifact] = useState<any>(null);
   const [chat, setChat] = useState("");
+  const [sending, setSending] = useState(false);
 
   async function load(pid: string, rid: string) {
     const s = await api(`/api/v1/projects/${pid}/revisions/${rid}`);
@@ -156,6 +157,9 @@ export default function Home() {
   }
 
   async function sendChat() {
+    if (sending) return;
+    setSending(true);
+    setMsg("Asking Meta (muse-wonder-1.0)… this usually takes 10–20 seconds.");
     try {
       const r = await api(`/api/v1/projects/${projectId}/conversations`, {
         method: "POST", body: JSON.stringify({ text: chat, base_revision_id: snap.revision_id }) });
@@ -171,6 +175,7 @@ export default function Home() {
         setMsg(`Meta (${r.model}): ${r.explanation || r.proposal?.intent}`);
       }
     } catch (e: any) { setMsg(`Conversation failed: ${e.message}`); }
+    finally { setSending(false); }
   }
 
   const poolQ = results.find((r) => r.method_id === "pool_quantities")?.quantities;
@@ -213,8 +218,10 @@ export default function Home() {
             placeholder="Describe your home, or ask for a change…"
             style={{ width: "100%", boxSizing: "border-box", padding: 8 }} />
           <div className="ns-btn-row" style={{ marginTop: 8 }}>
-          <button onClick={sendChat} disabled={!snap || !chat}
-            style={{ padding: "9px 12px", cursor: "pointer" }}>Send to Meta</button>
+          <button onClick={sendChat} disabled={!snap || !chat || sending}
+            style={{ padding: "9px 12px", cursor: sending ? "wait" : "pointer", opacity: sending ? 0.65 : 1 }}>
+            {sending ? "Sending to Meta…" : "Send to Meta"}
+          </button>
           <button onClick={toggleMic} disabled={!snap}
             style={{ padding: "9px 12px", cursor: "pointer",
                      background: recording ? "#b3352c" : "white", color: recording ? "white" : "#26303c" }}>
