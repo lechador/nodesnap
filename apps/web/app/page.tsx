@@ -63,6 +63,44 @@ export default function Home() {
     } catch (e: any) { setMsg(`Edit rejected: ${e.message}`); }
   }
 
+  async function moveSpace(id: string, dx: number, dy: number) {
+    try {
+      const out = await api(`/api/v1/projects/${projectId}/commands`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "If-Match": `"${snap.revision_id}"` },
+        body: JSON.stringify({ base_revision_id: snap.revision_id,
+          commands: [{ type: "move_space", element_id: id, dx_m: dx, dy_m: dy }] }),
+      });
+      setArtifact(null);
+      await load(projectId, out.revision_id);
+      setMsg(`Room moved → revision ${out.revision_number}. Areas recalculated.`);
+    } catch (e: any) { setMsg(`Move rejected — geometry restored: ${e.message}`); await load(projectId, snap.revision_id); }
+  }
+
+  async function regenerate() {
+    if (level !== "ground" && level !== "upper") { setMsg("Generation is supported for Ground and Upper floors."); return; }
+    const lvl = snap.levels.find((l: any) => l.name === level);
+    const rooms = snap.spaces.filter((s: any) => s.level_id === lvl.id && s.classification === "principal")
+      .map((s: any) => ({ name: s.name, use: s.use, target_area_m2: s.target_area_m2 }));
+    try {
+      const out = await api(`/api/v1/projects/${projectId}/generate`, {
+        method: "POST", body: JSON.stringify({ base_revision_id: snap.revision_id, level, rooms }) });
+      if (out.execution_status === "blocked") { setMsg(`Solver: ${out.issue.message}`); return; }
+      setArtifact(null);
+      await load(projectId, out.revision_id);
+      setMsg(`CP-SAT layout generated (${out.solver_status}) → revision ${out.revision_number}.`);
+    } catch (e: any) { setMsg(`Generation failed: ${e.message}`); }
+  }
+
+  async function undo() {
+    try {
+      const out = await api(`/api/v1/projects/${projectId}/undo`, { method: "POST", body: "{}" });
+      setArtifact(null);
+      await load(projectId, out.revision_id);
+      setMsg(`Undone — restored revision ${out.restored_from_revision_number} as new revision ${out.revision_number}.`);
+    } catch (e: any) { setMsg(`Undo: ${e.message}`); }
+  }
+
   async function exportPdf() {
     const m = await api(`/api/v1/projects/${projectId}/exports`, {
       method: "POST", body: JSON.stringify({ revision_id: snap.revision_id }) });
@@ -126,6 +164,14 @@ export default function Home() {
             style={{ marginLeft: 8, padding: "7px 12px", cursor: "pointer" }}>Apply</button>
           <p style={{ fontSize: 12.5 }}>Commits a typed command, creates a new revision, reruns pool + area calculations.</p>
 
+          <h4>Generate / history</h4>
+          <button onClick={regenerate} disabled={!snap} style={{ padding: "7px 12px", cursor: "pointer" }}>
+            Regenerate {level} layout (CP-SAT)
+          </button>
+          <button onClick={undo} disabled={!snap} style={{ marginLeft: 8, padding: "7px 12px", cursor: "pointer" }}>Undo</button>
+          <p style={{ fontSize: 12.5 }}>In the plan: click a room to select it, then drag it. Moves snap to 0.1 m;
+            overlapping or out-of-plate moves are rejected and the room is restored.</p>
+
           {artifact && (
             <p style={{ fontSize: 13 }}>
               <a href={`/artifacts/${artifact.artifact_id}`}>Download PDF — revision {artifact.revision_number}</a>
@@ -153,7 +199,7 @@ export default function Home() {
             ))}
           </div>
           {snap ? (view === "plan"
-            ? <Plan2D snap={snap} level={level} selected={selected} onSelect={setSelected} />
+            ? <Plan2D snap={snap} level={level} selected={selected} onSelect={setSelected} onMove={moveSpace} />
             : <Villa3D snap={snap} level={level} />)
             : <p>Loading…</p>}
           <p style={{ fontSize: 12.5, color: "#555" }}>

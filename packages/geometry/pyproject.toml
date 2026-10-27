@@ -2,7 +2,7 @@
 name = "nodesnap-geometry"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.9","shapely>=2.0","nodesnap-domain"]
+dependencies = ["pydantic>=2.9","shapely>=2.0","nodesnap-domain","ortools>=9.11"]
 
 [tool.uv.sources]
 nodesnap-domain = { workspace = true }

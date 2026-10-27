@@ -7,9 +7,9 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Canonical model + immutable revisions | yes | YES (M1) | — | — | M0/M1 |
 | Brief interpretation (Meta Wonder) | yes | no | research_required | — | needs META_API_KEY |
 | Microphone transcription (Meta) | yes | no | research_required | — | needs META_API_KEY |
-| CP-SAT layout generation (2 topologies) | yes | no | research_required | — | M2 |
+| CP-SAT layout generation (2 topologies) | yes | PARTIAL (central-corridor strip grammar) | research_required | — | M2 |
 | Geometry/topology validation (Shapely) | yes | no | research_required | — | M1/M2 |
-| Typed commands, drag edit, undo, conflicts | yes | no | — | — | M2 |
+| Typed commands, drag edit, undo, conflicts | yes | YES (move_space/set_pool_dimensions, 412/422 paths) | — | — | M2 |
 | Pool quantities (area/volume/mass/hydrostatic) | yes | YES (M1) | research_required | — | M1; physics only, not shell design |
 | Pool environment / evaporation | yes | no | research_required | — | method source gate (ASHRAE) open |
 | Structural fixtures A/B/C | yes | no | research_required | — | M3, before PyNite integration |

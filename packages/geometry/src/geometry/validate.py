@@ -22,6 +22,10 @@ def validate_spaces(spaces) -> list[dict]:
         if p.area <= 0:
             issues.append({"code": "INVALID_GEOMETRY", "object_id": s.id,
                            "message": f"{s.name}: non-positive area"})
+        minx, miny, maxx, maxy = p.bounds
+        if minx < -1e-9 or miny < -1e-9 or maxx > 18.0 + 1e-9 or maxy > 15.5 + 1e-9:
+            issues.append({"code": "OUTSIDE_ENVELOPE", "object_id": s.id,
+                           "message": f"{s.name}: outside the 18.0 x 15.5 m floor plate"})
     ids = list(polys)
     level_of = {s.id: s.level_id for s in spaces}
     for i in range(len(ids)):

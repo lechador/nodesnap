@@ -45,6 +45,15 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
                     if not (0 < v <= 50):
                         raise CommandError(f"{field} out of supported range: {v}")
                     setattr(snap.pool, field, v)
+        elif ctype == "move_space":
+            sid = raw.get("element_id")
+            dx, dy = float(raw.get("dx_m", 0)), float(raw.get("dy_m", 0))
+            sp = next((s for s in snap.spaces if s.id == sid), None)
+            if sp is None:
+                raise CommandError(f"space not found: {sid}")
+            # snap translation to the 0.1 m planning grid
+            dx, dy = round(dx * 10) / 10, round(dy * 10) / 10
+            sp.polygon = [[round(x + dx, 4), round(y + dy, 4)] for x, y in sp.polygon]
         else:
             raise CommandError(f"unsupported command type: {ctype}")
     snap.parent_revision_id = snapshot.revision_id

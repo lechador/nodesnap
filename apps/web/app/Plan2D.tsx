@@ -3,7 +3,7 @@ import { Stage, Layer, Rect, Text, Group } from "react-konva";
 
 const S = 28; // px per metre
 
-export default function Plan2D({ snap, level, selected, onSelect }: any) {
+export default function Plan2D({ snap, level, selected, onSelect, onMove }: any) {
   const lvl = snap.levels.find((l: any) => l.name === level);
   const spaces = snap.spaces.filter((s: any) => s.level_id === lvl.id);
   return (
@@ -21,6 +21,13 @@ export default function Plan2D({ snap, level, selected, onSelect }: any) {
               <Rect x={10 + x * S} y={10 + sy * S} width={w * S} height={d * S}
                 fill={selected === s.id ? "#f2c14e" : s.classification === "principal" ? "#e8eef7" : "#f3ead8"}
                 stroke="#26303c" strokeWidth={1}
+                draggable={selected === s.id}
+                onDragEnd={(e: any) => {
+                  const dx = (e.target.x() - (10 + x * S)) / S;
+                  const dy = -((e.target.y() - (10 + sy * S)) / S);
+                  e.target.position({ x: 10 + x * S, y: 10 + sy * S });
+                  onMove && onMove(s.id, dx, dy);
+                }}
                 onClick={() => onSelect(s.id)} onTap={() => onSelect(s.id)} />
               <Text x={10 + x * S + 4} y={10 + sy * S + d * S / 2 - 6} width={w * S - 8}
                 text={s.name} fontSize={10} fill="#1c2733" align="center"

@@ -283,6 +283,75 @@ def get_artifact(artifact_id: str, nodesnap_session: str | None = Cookie(default
                         filename=f"nodesnap-{artifact_id}.pdf")
 
 
+class GenerateBody(BaseModel):
+    base_revision_id: str
+    level: str  # ground | upper
+    rooms: list[dict]  # [{name, use, target_area_m2}]
+
+
+@app.post("/api/v1/projects/{project_id}/generate")
+def post_generate(project_id: str, body: GenerateBody, request: Request,
+                  nodesnap_session: str | None = Cookie(default=None)):
+    from geometry.generate import generate_floor
+    actor = get_actor(nodesnap_session)
+    db = Session(); proj = own_project(db, actor, project_id)
+    if proj.current_revision_id != body.base_revision_id:
+        db.close(); raise HTTPException(412, "stale base revision; reload current revision")
+    snap = load_snapshot(db, project_id, body.base_revision_id)
+    out = generate_floor(snap, body.level, body.rooms)
+    if out["spaces"] is None:
+        db.close()
+        return envelope({"solver_status": out["solver_status"], "execution_status": "blocked",
+                         "issue": {"code": "INFEASIBLE",
+                                   "message": "No solution within the encoded supported family (strip grammar, +/-15% area)."}}, request)
+    import copy as _copy
+    new_snap = _copy.deepcopy(snap)
+    new_snap.spaces = out["spaces"]
+    issues = validate_spaces(new_snap.spaces)
+    if issues:
+        db.close(); raise HTTPException(422, f"generated geometry invalid: {issues}")
+    new_snap.parent_revision_id = snap.revision_id
+    new_snap.revision_id = new_id()
+    new_snap.revision_number = snap.revision_number + 1
+    new_snap = new_snap.with_hash()
+    db.add(RevisionRow(revision_id=new_snap.revision_id, project_id=project_id,
+                       revision_number=new_snap.revision_number,
+                       snapshot_json=new_snap.model_dump_json()))
+    proj.current_revision_id = new_snap.revision_id
+    db.commit(); db.close()
+    return envelope({"revision_id": new_snap.revision_id,
+                     "revision_number": new_snap.revision_number,
+                     "content_hash": new_snap.content_hash,
+                     "solver_status": out["solver_status"],
+                     "invalidated_result_groups": ["architecture", "pool"]}, request)
+
+
+@app.post("/api/v1/projects/{project_id}/undo")
+def post_undo(project_id: str, request: Request,
+              nodesnap_session: str | None = Cookie(default=None)):
+    """Undo = a NEW revision restoring the parent state. History is never rewritten."""
+    actor = get_actor(nodesnap_session)
+    db = Session(); proj = own_project(db, actor, project_id)
+    cur = load_snapshot(db, project_id, proj.current_revision_id)
+    if not cur.parent_revision_id:
+        db.close(); raise HTTPException(422, "nothing to undo")
+    parent = load_snapshot(db, project_id, cur.parent_revision_id)
+    import copy as _copy
+    restored = _copy.deepcopy(parent)
+    restored.parent_revision_id = cur.revision_id
+    restored.revision_id = new_id()
+    restored.revision_number = cur.revision_number + 1
+    restored = restored.with_hash()
+    db.add(RevisionRow(revision_id=restored.revision_id, project_id=project_id,
+                       revision_number=restored.revision_number,
+                       snapshot_json=restored.model_dump_json()))
+    proj.current_revision_id = restored.revision_id
+    db.commit(); db.close()
+    return envelope({"revision_id": restored.revision_id,
+                     "revision_number": restored.revision_number,
+                     "restored_from_revision_number": parent.revision_number}, request)
+
+
 class ConversationBody(BaseModel):
     text: str
     base_revision_id: str

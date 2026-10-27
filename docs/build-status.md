@@ -24,6 +24,19 @@
   revision shown. Labels are small — polish item for M5.
 - Contracts: `packages/contracts/openapi.json` + generated `api.d.ts` (11 routes).
 
+### M2 progress (same day)
+- CP-SAT layout generation (`packages/geometry/layout.py` + `generate.py`): strip grammar,
+  0.1 m grid, ±15% area band, solver status reported honestly (OPTIMAL/FEASIBLE/INFEASIBLE).
+  API `POST /projects/{id}/generate`, UI "Regenerate layout" button — verified in browser
+  (OPTIMAL → revision 2). Different program targets produce different geometry (tested);
+  impossible program returns INFEASIBLE, not a fake layout.
+- Drag editing: selected room is draggable in the Konva plan; release commits one
+  `move_space` typed command (0.1 m snap); overlap/out-of-plate moves return 422 with
+  named objects and the UI restores committed geometry. Undo endpoint creates a new
+  revision restoring the parent (history never rewritten) — verified over HTTP.
+- Still open in M2: wall assemblies/thickness derivation, doors/openings through shared
+  boundaries, access-graph checks, side-corridor topology, 3D transform handles.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).
