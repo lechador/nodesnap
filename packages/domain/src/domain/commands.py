@@ -45,6 +45,18 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
                     if not (0 < v <= 50):
                         raise CommandError(f"{field} out of supported range: {v}")
                     setattr(snap.pool, field, v)
+            # Keep the water inside the pool hall: re-centre on resize instead
+            # of silently overflowing the hall wall.
+            hall = next((s for s in snap.spaces if s.use == "pool_hall"), None)
+            if hall is not None:
+                xs = [pt[0] for pt in hall.polygon]; ys = [pt[1] for pt in hall.polygon]
+                hw, hd = max(xs) - min(xs), max(ys) - min(ys)
+                if snap.pool.water_length_m > hw or snap.pool.water_width_m > hd:
+                    raise CommandError(
+                        f"pool {snap.pool.water_length_m} x {snap.pool.water_width_m} m does not fit "
+                        f"the pool hall ({hw} x {hd} m)")
+                snap.pool.origin_x_m = round(min(xs) + (hw - snap.pool.water_length_m) / 2, 4)
+                snap.pool.origin_y_m = round(min(ys) + (hd - snap.pool.water_width_m) / 2, 4)
         elif ctype == "move_space":
             sid = raw.get("element_id")
             dx, dy = float(raw.get("dx_m", 0)), float(raw.get("dy_m", 0))

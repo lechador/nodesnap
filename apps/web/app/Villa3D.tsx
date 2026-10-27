@@ -6,7 +6,14 @@ export default function Villa3D({ snap, level }: { snap: any; level: string }) {
   const lvl = snap.levels.find((l: any) => l.name === level);
   const spaces = snap.spaces.filter((s: any) => s.level_id === lvl.id);
   return (
-    <div style={{ width: "100%", height: 520 }}>
+    <div style={{ width: "100%", height: 520, position: "relative" }}>
+      {snap.pool && level === "basement" && (
+        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: "rgba(10,18,26,0.82)",
+                      color: "#a5f3fc", padding: "6px 10px", fontSize: 13, border: "1px solid #155e75" }}>
+          Pool water {snap.pool.water_length_m} × {snap.pool.water_width_m} × {snap.pool.water_depth_m} m
+          {" "}(bright slab on the hall block)
+        </div>
+      )}
       <Canvas camera={{ position: [16, 15, 16], fov: 50 }} dpr={1}
         gl={{ preserveDrawingBuffer: true, antialias: true }}>
         <color attach="background" args={["#1a222c"]} />
@@ -27,15 +34,16 @@ export default function Villa3D({ snap, level }: { snap: any; level: string }) {
           return (
             <mesh key={s.id} position={[cx, 1.9, -cz]}>
               <boxGeometry args={[Math.max(w - 0.06, 0.1), 3.0, Math.max(d - 0.06, 0.1)]} />
-              <meshStandardMaterial color={isPool ? "#2b6cb0" : s.classification === "principal" ? "#d8c9a3" : "#8a919c"} />
+              <meshStandardMaterial color={isPool ? "#2b6cb0" : s.classification === "principal" ? "#d8c9a3" : "#8a919c"}
+                transparent={isPool} opacity={isPool ? 0.45 : 1} />
             </mesh>
           );
         })}
         {snap.pool && level === "basement" && (
-          <mesh position={[snap.pool.origin_x_m + snap.pool.water_length_m / 2 - 9, 2.6,
+          <mesh position={[snap.pool.origin_x_m + snap.pool.water_length_m / 2 - 9, 3.55,
             -(snap.pool.origin_y_m + snap.pool.water_width_m / 2 - 7.75)]}>
-            <boxGeometry args={[snap.pool.water_length_m, 0.3, snap.pool.water_width_m]} />
-            <meshStandardMaterial color="#38bdf8" />
+            <boxGeometry args={[snap.pool.water_length_m, 0.35, snap.pool.water_width_m]} />
+            <meshStandardMaterial color="#22d3ee" emissive="#0e7490" emissiveIntensity={0.7} />
           </mesh>
         )}
         <OrbitControls />

@@ -60,3 +60,15 @@ def test_pdf_is_real_and_revision_bound():
     pdf = build_review_pdf(snap)
     assert pdf.startswith(b"%PDF")
     assert len(pdf) > 5000
+
+
+def test_pool_resize_recentres_inside_hall_and_rejects_overflow():
+    import pytest
+    from domain.commands import CommandError
+    snap = build_seed(new_id())
+    new = apply_commands(snap, [{"type": "set_pool_dimensions", "water_length_m": 11.0}])
+    # hall is 12 m wide starting at x=0 -> origin (12-11)/2 = 0.5, never outside
+    assert new.pool.origin_x_m == 0.5
+    assert new.pool.origin_x_m + new.pool.water_length_m <= 12.0
+    with pytest.raises(CommandError):
+        apply_commands(snap, [{"type": "set_pool_dimensions", "water_length_m": 14.0}])
