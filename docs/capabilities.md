@@ -17,11 +17,11 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Load ledger + combinations | yes | no | research_required | — | NYC/ASCE source gate open |
 | Steel/timber/RC design checks | yes | no | research_required | — | sourced methods required |
 | Foundations/basement scenarios | yes | PARTIAL (bearing scenario) | implemented | uniform-pressure scenario vs assumed 100 kPa in analyses + UI | settlement/uplift/reinforcement gated; no geotech evidence |
-| HVAC loads + ventilation | yes | no | research_required | — | sourced methods required |
-| Plumbing networks + demand | yes | no | research_required | — | sourced methods required |
-| Electrical loads + panel graph | yes | no | research_required | — | 2025 NYC Electrical method required |
-| Energy (2025 NYCECC pathway) | yes | no | research_required | — | pathway determination required |
-| Roof terrace + drainage/runoff | yes | no | research_required | — | hydraulic method gate open |
+| HVAC loads + ventilation | yes | PARTIAL (conduction component) | implemented | U*A*dT ledger 6.38 kW with assumed U/dT; tests hand-checked | ventilation, solar, latent, pool env gated |
+| Plumbing networks + demand | yes | PARTIAL (inventory) | implemented | 11 fixtures, 74 L/min summed flows from canonical spaces | fixture-unit sizing, venting, discharge gated |
+| Electrical loads + panel graph | yes | PARTIAL (connected load) | implemented | 24.3 kW connected, 101 A at declared 240 V, equipment as electrical inputs | demand factors, ampacity, panel graph, pool bonding gated |
+| Energy (2025 NYCECC pathway) | yes | PARTIAL (envelope ledger) | implemented | conduction ledger shared with HVAC | NYCECC pathway + compliance method gated |
+| Roof terrace + drainage/runoff | yes | PARTIAL (runoff scenario) | implemented | 7.36 L/s at assumed C=0.95/100mm/h, conversion stated | gutter/detention/connection sizing gated |
 | NYC site evidence adapters | yes | no | research_required | — | live API verification in M5 |
 | Drawing set + calc report PDFs | yes | PARTIAL (4 plans + calc page) | research_required | — | M1 (1 sheet) → M5 (all families) |
 | Export manifest + hashes | yes | no | — | — | M5 |

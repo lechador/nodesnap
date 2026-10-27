@@ -49,6 +49,10 @@
 - Foundation bearing scenario: 11.00 kPa average vs assumed 100 kPa (utilization 0.11), geotech basis explicitly missing.
 - Found while testing: PyNite deflection_array returns [x, deflection] rows and node-only sampling measures column shortening — both fixed, tests guard them.
 
+### M4 services (2026-10-27)
+- Inventories built from canonical spaces (bathrooms/kitchens/equipment); component math hand-checked in tests: conduction 600 W fixture case, runoff conversion exact, current I=P/V, fixture sums.
+- UI shows: electrical 24.3 kW connected (101 A @ declared 240 V), 11 fixtures / 74 L/min, envelope conduction 6.38 kW, roof runoff 7.36 L/s — each labelled with what remains gated. Pool environment method remains research_required (ASHRAE transcription gate).
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

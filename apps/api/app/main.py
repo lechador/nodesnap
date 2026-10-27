@@ -249,12 +249,21 @@ def post_analysis(project_id: str, body: AnalysisBody, request: Request,
                         "issues": [{"code": "MISSING_INPUT", "field": "geotechnical_design_basis",
                                     "message": "No project geotechnical basis; scenario uses an assumed 100 kPa allowable bearing."}]})
     except Exception as e:
-        results.append({"discipline": "structure", "method_id": "structural_frame_analysis",
-                        "method_state": "implemented", "execution_status": "error",
+        results.append({"discipline": "structure", "method_id": "structural_frame_analysis",                        "method_state": "implemented", "execution_status": "error",
                         "check_outcome": "not_evaluated", "freshness_status": "current",
                         "review_status": "unreviewed", "revision_id": snap.revision_id,
                         "input_bases": ["demonstration_assumption"],
                         "issues": [{"code": "UNSTABLE_MODEL", "message": f"frame analysis failed: {type(e).__name__}"}]})
+    from engineering.services import build_inventories
+    results.append({"discipline": "hvac/plumbing/electrical/energy/drainage",
+                    "method_id": "services_inventories",
+                    "method_state": "implemented", "execution_status": "completed",
+                    "check_outcome": "not_evaluated", "freshness_status": "current",
+                    "review_status": "unreviewed", "revision_id": snap.revision_id,
+                    "input_bases": ["demonstration_assumption", "derived"],
+                    "quantities": build_inventories(snap),
+                    "issues": [{"code": "UNVERIFIED_SOURCE", "field": "code_sizing_methods",
+                                "message": "Inventories and component quantities only; code sizing/ventilation/energy-pathway/hydraulic methods remain research_required."}]})
     job_id = new_id()
     import json as _json
     db.add(JobRow(id=job_id, project_id=project_id, revision_id=snap.revision_id,

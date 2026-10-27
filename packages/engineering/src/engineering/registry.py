@@ -58,6 +58,12 @@ METHODS: list[EngineeringMethod] = [
         method_state=MethodState.IMPLEMENTED,
         source="Uniform average-pressure scenario over the footprint with an explicitly assumed allowable bearing input (spec E6).",
         exclusions="Settlement, uplift, reinforcement, excavation support; no geotechnical evidence in demo."),
+    EngineeringMethod(
+        id="services_inventories", discipline="hvac/plumbing/electrical/energy/drainage",
+        purpose="Fixture/equipment inventories with transparent component quantities: envelope conduction U*A*dT, connected electrical load, fixture-flow sums, roof runoff scenario.",
+        method_state=MethodState.IMPLEMENTED,
+        source="Spec E8-E12 component definitions with explicitly assumed inputs; hand-checked in tests/test_m4_services.py.",
+        exclusions="Code sizing (fixture units, demand factors, ampacity, ventilation rates, energy pathway, hydraulics) and pool latent/environment methods remain research_required."),
 ]
 
 

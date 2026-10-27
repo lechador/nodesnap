@@ -128,6 +128,7 @@ export default function Home() {
   const poolQ = results.find((r) => r.method_id === "pool_quantities")?.quantities;
   const frameQ = results.find((r) => r.method_id === "structural_frame_analysis")?.quantities;
   const bearQ = results.find((r) => r.method_id === "foundation_bearing_review")?.quantities;
+  const svcQ = results.find((r) => r.method_id === "services_inventories")?.quantities;
   const sel = snap?.spaces.find((s: any) => s.id === selected);
 
   return (
@@ -264,6 +265,20 @@ export default function Home() {
                 Uniform-pressure assumption only; no geotechnical evidence — real-project basis remains a missing input.</p>
             </>
           )}
+
+          <h4>Services — inventories &amp; component quantities</h4>
+          {svcQ ? (
+            <ul style={{ paddingLeft: 18, lineHeight: 1.6 }}>
+              <li>Electrical connected load: <b>{(svcQ.electrical.connected_load_w / 1000).toFixed(1)} kW</b>{" "}
+                ({svcQ.electrical.current_at_connected_load_a.toFixed(0)} A at declared {svcQ.electrical.declared_voltage_v} V; demand sizing gated)</li>
+              <li>Plumbing fixtures: <b>{svcQ.plumbing.fixtures.length}</b>, summed fixture flows{" "}
+                <b>{svcQ.plumbing.sum_of_fixture_flows_l_min.toFixed(0)} L/min</b> (fixture-unit sizing gated)</li>
+              <li>Envelope conduction (assumed U, ΔT {svcQ.hvac_energy.delta_t_k} K):{" "}
+                <b>{(svcQ.hvac_energy.total_conduction_w / 1000).toFixed(2)} kW</b> (ventilation/latent/pool loads gated)</li>
+              <li>Roof runoff scenario: <b>{svcQ.drainage.runoff_l_s.toFixed(2)} L/s</b>{" "}
+                (C={svcQ.drainage.runoff_coefficient_assumed}, {svcQ.drainage.rainfall_mm_h_assumed} mm/h assumed; hydraulic sizing gated)</li>
+            </ul>
+          ) : <p>Not calculated yet.</p>}
 
           <h4>Coverage &amp; honest gaps</h4>
           <ul style={{ paddingLeft: 18, lineHeight: 1.6 }}>
