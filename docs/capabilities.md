@@ -6,7 +6,7 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 |---|---|---|---|---|---|
 | Canonical model + immutable revisions | yes | YES (M1) | — | — | M0/M1 |
 | Brief interpretation (Meta Wonder) | yes | YES (structured) | implemented | Strict json_schema proposal verified live; chat 'make the pool 11 metres long' committed rev 2 in UI (volume 53.90 m3), living-room 900 ft2 -> CP-SAT OPTIMAL rev 4, unsupported requests never mutate | occasional garbled explanations required a bounded repair pass (implemented, 1 retry) |
-| Microphone transcription (Meta) | yes | no | implemented | muse-voice-transcribe-1.0 confirmed present in account model list | transcription endpoint not yet called with audio |
+| Microphone transcription (Meta) | yes | YES | implemented | POST /asr/transcribe verified live; app endpoint returned exact transcript of test WAV; browser mic records, resamples to 16 kHz WAV, transcript is editable before sending | live speaker accuracy varies (TTS test phrase heard correctly via app; one direct-API test misheard) |
 | CP-SAT layout generation (2 topologies) | yes | PARTIAL (central-corridor strip grammar) | research_required | — | M2 |
 | Geometry/topology validation (Shapely) | yes | no | research_required | — | M1/M2 |
 | Typed commands, drag edit, undo, conflicts | yes | YES (move_space/set_pool_dimensions, 412/422 paths) | — | — | M2 |

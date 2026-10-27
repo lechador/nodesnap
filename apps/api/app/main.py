@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Cookie, FastAPI, File, Header, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, Text, create_engine
@@ -410,6 +410,47 @@ def post_undo(project_id: str, request: Request,
     return envelope({"revision_id": restored.revision_id,
                      "revision_number": restored.revision_number,
                      "restored_from_revision_number": parent.revision_number}, request)
+
+
+@app.post("/api/v1/projects/{project_id}/transcriptions")
+async def transcription(project_id: str, request: Request,
+                        audio: UploadFile = File(...),
+                        nodesnap_session: str | None = Cookie(default=None)):
+    """Meta Voice Transcribe via POST /asr/transcribe (documented multipart:
+    JSON `request` part + WAV `audio` part; mono s16le 16/24 kHz). The browser
+    records, resamples to 16 kHz WAV, and shows the transcript for editing
+    before it becomes a design request (spec A4.3)."""
+    import json as _json
+    import httpx
+    actor = get_actor(nodesnap_session)
+    db = Session(); own_project(db, actor, project_id); db.close()
+    st = meta_status()
+    if not st["configured"]:
+        return envelope({"execution_status": "blocked", "issue": st["issue"], "text": None}, request)
+    data = await audio.read()
+    max_bytes = 32 * 1024 * 1024  # documented provider limit
+    if len(data) > max_bytes:
+        raise HTTPException(413, "audio exceeds 32 MB provider limit")
+    files = {"request": (None, _json.dumps({"model": st["transcription_model"],
+                                            "audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}),
+                         "application/json"),
+             "audio": ("recording.wav", data, "audio/wav")}
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            r = await client.post(f"{st['base_url']}/asr/transcribe",
+                                  headers={"Authorization": f"Bearer {os.environ['META_API_KEY']}",
+                                           "Accept": "application/json"},
+                                  files=files)
+            j = r.json()
+    except Exception as e:
+        return envelope({"execution_status": "error", "text": None,
+                         "issue": {"code": "PROVIDER_ERROR", "message": f"transcription failed: {type(e).__name__}"}}, request)
+    if j.get("error"):
+        return envelope({"execution_status": "error", "text": None,
+                         "issue": {"code": "PROVIDER_ERROR", "message": j["error"].get("message", "transcription error")}}, request)
+    return envelope({"execution_status": "completed", "model": st["transcription_model"],
+                     "text": j.get("transcript", ""), "session_id": j.get("sessionId"),
+                     "audio_duration_ms": j.get("audioDurationMs")}, request)
 
 
 class ConversationBody(BaseModel):

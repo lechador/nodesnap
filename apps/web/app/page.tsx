@@ -5,6 +5,19 @@ import { useEffect, useState } from "react";
 const Plan2D = dynamic(() => import("./Plan2D"), { ssr: false });
 const Villa3D = dynamic(() => import("./Villa3D"), { ssr: false });
 
+
+function encodeWav16k(samples: Float32Array): Blob {
+  const buf = new ArrayBuffer(44 + samples.length * 2);
+  const v = new DataView(buf);
+  const wstr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  wstr(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); wstr(8, "WAVEfmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); wstr(36, "data"); v.setUint32(40, samples.length * 2, true);
+  samples.forEach((s, i) => v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 32767, true));
+  return new Blob([buf], { type: "audio/wav" });
+}
+
 const LEVELS = ["basement", "ground", "upper", "roof"] as const;
 
 async function api(path: string, opts: RequestInit = {}) {
@@ -48,6 +61,41 @@ export default function Home() {
     } catch (e: any) { setMsg(`Error: ${e.message}`); }
   }
   useEffect(() => { start(); }, []);
+
+
+  const [recording, setRecording] = useState(false);
+  const mediaRef = useState<{ mr?: MediaRecorder; chunks: Blob[] }>({ chunks: [] })[0];
+
+  async function toggleMic() {
+    if (recording) { mediaRef.mr?.stop(); setRecording(false); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      mediaRef.mr = mr; mediaRef.chunks = [];
+      mr.ondataavailable = (e) => mediaRef.chunks.push(e.data);
+      mr.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        try {
+          const raw = new Blob(mediaRef.chunks);
+          const actx = new AudioContext();
+          const decoded = await actx.decodeAudioData(await raw.arrayBuffer());
+          const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+          const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+          const rendered = await off.startRendering();
+          const wav = encodeWav16k(rendered.getChannelData(0));
+          const fd = new FormData(); fd.append("audio", wav, "recording.wav");
+          const r = await fetch(`/api/v1/projects/${projectId}/transcriptions`, { method: "POST", body: fd });
+          const j = await r.json();
+          if (j.data?.text) { setChat(j.data.text); setMsg("Transcript ready — edit it, then Send to Meta."); }
+          else setMsg(`Transcription ${j.data?.execution_status ?? "failed"}: ${j.data?.issue?.message ?? ""}`);
+        } catch (e: any) { setMsg(`Microphone processing failed: ${e.message}`); }
+      };
+      mr.start();
+      setRecording(true);
+      setMsg("Recording… click the microphone again to stop (max 60 s).");
+      setTimeout(() => { if (mediaRef.mr?.state === "recording") mediaRef.mr.stop(); }, 60000);
+    } catch { setMsg("Microphone permission denied — typed chat still works."); }
+  }
 
   async function applyPool() {
     try {
@@ -166,6 +214,11 @@ export default function Home() {
             style={{ width: "100%", boxSizing: "border-box", padding: 8 }} />
           <button onClick={sendChat} disabled={!snap || !chat}
             style={{ marginTop: 8, padding: "7px 12px", cursor: "pointer" }}>Send to Meta</button>
+          <button onClick={toggleMic} disabled={!snap}
+            style={{ marginLeft: 8, marginTop: 8, padding: "7px 12px", cursor: "pointer",
+                     background: recording ? "#b3352c" : "white", color: recording ? "white" : "#26303c" }}>
+            {recording ? "■ Stop recording" : "🎙 Record (Meta transcription)"}
+          </button>
           <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#5a4632" }}>{msg}</p>
 
           <h4>Try a real change</h4>

@@ -57,6 +57,10 @@
 - Export is now an 11-sheet package: COVER (NYC D1 profile, blank job/seal fields) · C-101 synthetic site · A-101-104 plans · CALC-101 pool+areas · S-101 frame reactions · F-101 bearing · MPE-101 services · REG-101 assumptions/methods/open issues. Cover and F-101 pages visually inspected: readable, no clipping.
 - Frozen basis: export computes its result set once from the named revision; basis hash precedes file hashes; manifest hash stored externally (no circular hashing). Manifest + canonical model JSON are downloadable artifacts alongside the PDF.
 
+### Transcription (2026-10-27)
+- Correct endpoint is POST /v1/asr/transcribe (multipart request JSON + WAV; /audio/transcriptions and Responses input_audio both 404 with this model). Requires mono s16le 16/24 kHz WAV.
+- App endpoint + browser mic (MediaRecorder -> 16 kHz WAV in-page) verified: test speech transcribed exactly through the app. Wrong-endpoint probes and the format requirement are recorded here so they are not re-discovered.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).
