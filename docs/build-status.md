@@ -37,6 +37,12 @@
 - Still open in M2: wall assemblies/thickness derivation, doors/openings through shared
   boundaries, access-graph checks, side-corridor topology, 3D transform handles.
 
+### Meta structured orchestration (2026-10-27, evening)
+- Muse structured proposal: probe -> domain validation -> same typed-command commit path as drag edits.
+- Live scenario chain on one project: pool 12 m (rev 2) -> pool 9 m (rev 3) -> living room 900 ft2 via CP-SAT (rev 4, OPTIMAL).
+- In the browser: typed 'make the pool 11 metres long' -> committed rev 2, inspector volume 53.90 m3 (exact).
+- Failure found and handled: model sometimes returned explain/garbled text for explicit changes -> strengthened prompt + one bounded controller repair re-ask. Unsupported requests (helipad) never mutate.
+
 ### Known gaps / next
 - META_API_KEY missing → M0 Meta live-verification gate open (founder action).
 - UI polish: plan card whitespace, inspector table spacing, small-screen layout (M6).

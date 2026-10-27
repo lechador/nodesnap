@@ -108,11 +108,21 @@ export default function Home() {
   }
 
   async function sendChat() {
-    const r = await api(`/api/v1/projects/${projectId}/conversations`, {
-      method: "POST", body: JSON.stringify({ text: chat, base_revision_id: snap.revision_id }) });
-    setMsg(r.execution_status === "blocked"
-      ? `Meta blocked: ${r.issue?.message}`
-      : `Meta (${r.model}): response received — see server log.`);
+    try {
+      const r = await api(`/api/v1/projects/${projectId}/conversations`, {
+        method: "POST", body: JSON.stringify({ text: chat, base_revision_id: snap.revision_id }) });
+      if (r.execution_status === "blocked" || r.execution_status === "error") {
+        setMsg(`Meta ${r.execution_status}: ${r.issue?.message ?? "no proposal"}`);
+        return;
+      }
+      if (r.committed_revision_id) {
+        setArtifact(null);
+        await load(projectId, r.committed_revision_id);
+        setMsg(`Meta (${r.model}) → ${r.proposal.intent} committed as revision ${r.committed_revision_number}. ${r.explanation}`);
+      } else {
+        setMsg(`Meta (${r.model}): ${r.explanation || r.proposal?.intent}`);
+      }
+    } catch (e: any) { setMsg(`Conversation failed: ${e.message}`); }
   }
 
   const poolQ = results.find((r) => r.method_id === "pool_quantities")?.quantities;

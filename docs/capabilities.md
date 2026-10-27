@@ -5,7 +5,7 @@ Full target preserved for every row. Status uses spec vocabulary; a gap is never
 | Capability | Planned | Implemented | Method state | Evidence | Gap |
 |---|---|---|---|---|---|
 | Canonical model + immutable revisions | yes | YES (M1) | — | — | M0/M1 |
-| Brief interpretation (Meta Wonder) | yes | PARTIAL (plain-text call) | implemented | Live /models 200 + real muse-wonder-1.0 reply via app, 2026-10-27 | structured proposal schema + tool loop still to wire |
+| Brief interpretation (Meta Wonder) | yes | YES (structured) | implemented | Strict json_schema proposal verified live; chat 'make the pool 11 metres long' committed rev 2 in UI (volume 53.90 m3), living-room 900 ft2 -> CP-SAT OPTIMAL rev 4, unsupported requests never mutate | occasional garbled explanations required a bounded repair pass (implemented, 1 retry) |
 | Microphone transcription (Meta) | yes | no | implemented | muse-voice-transcribe-1.0 confirmed present in account model list | transcription endpoint not yet called with audio |
 | CP-SAT layout generation (2 topologies) | yes | PARTIAL (central-corridor strip grammar) | research_required | — | M2 |
 | Geometry/topology validation (Shapely) | yes | no | research_required | — | M1/M2 |

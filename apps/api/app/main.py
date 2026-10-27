@@ -360,7 +360,101 @@ class ConversationBody(BaseModel):
 @app.post("/api/v1/projects/{project_id}/conversations")
 async def conversation(project_id: str, body: ConversationBody, request: Request,
                        nodesnap_session: str | None = Cookie(default=None)):
+    """Bounded Meta orchestration: propose -> domain-validate -> commit typed
+    commands through the same path as direct edits. Explain/unsupported
+    proposals never mutate the model."""
+    from domain.models import FT2_TO_M2
+    from geometry.generate import generate_floor
+    from .orchestrate import propose
+
     actor = get_actor(nodesnap_session)
-    db = Session(); own_project(db, actor, project_id); db.close()
-    result = await interpret_brief(body.text)
-    return envelope({"base_revision_id": body.base_revision_id, **result}, request)
+    db = Session(); proj = own_project(db, actor, project_id)
+    snap = load_snapshot(db, project_id, body.base_revision_id)
+    lvl_label = {l.id: l.name for l in snap.levels}
+    rooms_ctx = "; ".join(
+        f"{lvl_label[s.level_id]}: {s.name} ({s.target_area_m2 and round(s.target_area_m2 / FT2_TO_M2)} ft2 target)"
+        for s in snap.spaces if s.classification == "principal")
+    pool_ctx = (f"pool water {snap.pool.water_length_m} x {snap.pool.water_width_m} x "
+                f"{snap.pool.water_depth_m} m" if snap.pool else "no pool")
+    context = f"Revision {snap.revision_number}. {pool_ctx}. Principal rooms: {rooms_ctx}."
+    out = await propose(body.text, context)
+    if out.get("execution_status") != "completed" or not out.get("proposal"):
+        db.close()
+        return envelope({"base_revision_id": body.base_revision_id, **out}, request)
+    p = out["proposal"]
+    # Bounded repair (spec S6: two proposal repairs max): if the model answered
+    # explain/unsupported but the homeowner plainly stated a change with a
+    # number, re-ask once with corrective feedback instead of silently no-oping.
+    import re as _re
+    change_like = bool(_re.search(r"\d", body.text)) and bool(
+        _re.search(r"(make|set|change|longer|bigger|larger|smaller|resize|extend|metres?|meters?|feet|ft)\b",
+                   body.text, _re.I))
+    if p["intent"] in ("explain", "unsupported") and change_like:
+        out2 = await propose(
+            body.text + "\n\n[Controller feedback: your previous proposal changed nothing, "
+            "but the homeowner stated an explicit change with a dimension. Re-propose "
+            "capturing that change.]", context)
+        if out2.get("execution_status") == "completed" and out2.get("proposal"):
+            out = out2
+            p = out["proposal"]
+    result = {"base_revision_id": body.base_revision_id, "execution_status": "completed",
+              "model": out.get("model"), "usage": out.get("usage"),
+              "proposal": p, "explanation": p.get("explanation", ""),
+              "committed_revision_id": None}
+
+    def commit(new_snap, groups):
+        db.add(RevisionRow(revision_id=new_snap.revision_id, project_id=project_id,
+                           revision_number=new_snap.revision_number,
+                           snapshot_json=new_snap.model_dump_json()))
+        proj.current_revision_id = new_snap.revision_id
+        db.commit()
+        result["committed_revision_id"] = new_snap.revision_id
+        result["committed_revision_number"] = new_snap.revision_number
+        result["invalidated_result_groups"] = groups
+
+    try:
+        if p["intent"] == "set_pool_dimensions":
+            cmd = {"type": "set_pool_dimensions",
+                   "water_length_m": p.get("pool_length_m"),
+                   "water_width_m": p.get("pool_width_m"),
+                   "water_depth_m": p.get("pool_depth_m")}
+            if all(cmd[k] is None for k in ("water_length_m", "water_width_m", "water_depth_m")):
+                raise CommandError("proposal stated no pool dimension")
+            commit(apply_commands(snap, [cmd]), ["pool", "architecture"])
+        elif p["intent"] == "regenerate_floor":
+            level = p.get("level") or "ground"
+            lvl = next((l for l in snap.levels if l.name == level), None)
+            if lvl is None:
+                raise CommandError(f"unsupported level: {level}")
+            rooms = [{"name": s.name, "use": s.use, "target_area_m2": s.target_area_m2}
+                     for s in snap.spaces if s.level_id == lvl.id and s.classification == "principal"]
+            if p.get("room_name") and p.get("room_target_area_ft2"):
+                hit = [r for r in rooms if r["name"].lower() == p["room_name"].lower()]
+                if not hit:
+                    raise CommandError(f"room not found on {level}: {p['room_name']}")
+                hit[0]["target_area_m2"] = round(p["room_target_area_ft2"] * FT2_TO_M2, 3)
+            gen = generate_floor(snap, level, rooms)
+            if gen["spaces"] is None:
+                result["execution_status"] = "blocked"
+                result["issue"] = {"code": "INFEASIBLE",
+                                   "message": "No layout within the supported grammar for that program."}
+                db.close(); return envelope(result, request)
+            import copy as _copy
+            new_snap = _copy.deepcopy(snap)
+            new_snap.spaces = gen["spaces"]
+            issues = validate_spaces(new_snap.spaces)
+            if issues:
+                raise CommandError(f"generated geometry invalid: {issues}")
+            new_snap.parent_revision_id = snap.revision_id
+            new_snap.revision_id = new_id()
+            new_snap.revision_number = snap.revision_number + 1
+            commit(new_snap.with_hash(), ["architecture"])
+            result["solver_status"] = gen["solver_status"]
+        # explain / unsupported: no mutation by design
+    except CommandError as e:
+        db.close()
+        result["execution_status"] = "blocked"
+        result["issue"] = {"code": "DOMAIN_VALIDATION", "message": str(e)}
+        return envelope(result, request)
+    db.close()
+    return envelope(result, request)
