@@ -12,9 +12,9 @@ MARGIN = inch
 
 def header(c: canvas.Canvas, page_size, sheet: str, title: str, snap):
     w, h = page_size
-    c.setFont("Helvetica-Bold", 15)
+    c.setFont("Helvetica-Bold", 18)
     c.drawString(MARGIN, h - 0.75 * inch, f"{sheet} — {title}")
-    c.setFont("Helvetica", 9.5)
+    c.setFont("Helvetica", 11.5)
     c.drawString(MARGIN, h - 1.05 * inch,
                  f"NodeSnap · {snap.title} · Revision {snap.revision_number} ({snap.revision_id})")
     c.drawString(MARGIN, h - 1.28 * inch,
@@ -28,13 +28,13 @@ def header(c: canvas.Canvas, page_size, sheet: str, title: str, snap):
 
 
 def lines(c: canvas.Canvas, page_size, y: float, items: list[str],
-          font_size: float = 9.5, leading: float = 0.21, bold_first: bool = False) -> float:
+          font_size: float = 11.5, leading: float = 0.27, bold_first: bool = False) -> float:
     w, h = page_size
     for i, s in enumerate(items):
         c.setFont("Helvetica-Bold" if (bold_first and i == 0) else "Helvetica", font_size)
         # simple word wrap at ~125 chars for this sheet size
-        while len(s) > 125:
-            cut = s.rfind(" ", 0, 125)
+        while len(s) > 105:
+            cut = s.rfind(" ", 0, 105)
             c.drawString(MARGIN, y, s[:cut]); y -= leading * inch; s = "   " + s[cut + 1:]
             if y < MARGIN:
                 c.showPage(); y = h - MARGIN
@@ -81,7 +81,7 @@ def site_page(c: canvas.Canvas, page_size, snap):
     ex, ey = ox + 6 * scale, oy + 14 * scale
     c.rect(ex, ey, 18 * scale, 15.5 * scale, stroke=1, fill=1)
     c.setFillColorRGB(0, 0, 0)
-    c.setFont("Helvetica", 8.5)
+    c.setFont("Helvetica", 10.5)
     c.drawString(ox, oy - 16, "Synthetic 30 x 45 m context (scenario parameter, not a surveyed lot). Building envelope 18.0 x 15.5 m.")
     items = [
         "No real address, no BBL, no surveyed boundary, no zoning determination is claimed for this demonstration.",

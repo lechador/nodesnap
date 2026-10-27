@@ -17,7 +17,7 @@ PAGE = landscape((18 * inch, 12 * inch))  # ARCH B sheet
 
 def _plan_page(c: canvas.Canvas, snap: ProjectSnapshot, level_name: str):
     w, h = PAGE
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("Helvetica-Bold", 19)
     c.drawString(inch, h - 0.8 * inch, f"NodeSnap — {snap.title}")
     c.setFont("Helvetica", 10)
     c.drawString(inch, h - 1.15 * inch,
@@ -43,7 +43,7 @@ def _plan_page(c: canvas.Canvas, snap: ProjectSnapshot, level_name: str):
         cx = ox + sum(pt[0] for pt in pts[:-1]) / (len(pts) - 1) * scale
         cy = oy + sum(pt[1] for pt in pts[:-1]) / (len(pts) - 1) * scale
         c.setFillColorRGB(0, 0, 0)
-        c.setFont("Helvetica", 6.5)
+        c.setFont("Helvetica", 9.5)
         c.drawCentredString(cx, cy, s.name)
     if snap.pool and level_name == "basement":
         pl = snap.pool
@@ -51,12 +51,12 @@ def _plan_page(c: canvas.Canvas, snap: ProjectSnapshot, level_name: str):
         c.setLineWidth(2)
         c.rect(ox + pl.origin_x_m * scale, oy + pl.origin_y_m * scale,
                pl.water_length_m * scale, pl.water_width_m * scale, stroke=1, fill=0)
-        c.setFont("Helvetica", 7)
+        c.setFont("Helvetica", 9.5)
         c.drawString(ox + pl.origin_x_m * scale, oy + (pl.origin_y_m + pl.water_width_m) * scale + 4,
                      f"POOL WATER {pl.water_length_m} x {pl.water_width_m} m")
     c.setStrokeColorRGB(0, 0, 0)
     c.setLineWidth(1)
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 10)
     c.drawString(ox, oy - 18, f"Scale: drawing fitted to page; envelope 18.0 x 15.5 m. Units: m (SI canonical). North: +Y.")
     c.showPage()
 
@@ -132,7 +132,7 @@ def build_review_pdf(snap: ProjectSnapshot, results: list[dict] | None = None) -
         _plan_page(c, snap, lvl)
     # calculation + schedule page
     w, h = PAGE
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("Helvetica-Bold", 19)
     c.drawString(inch, h - 0.8 * inch, "Calculation & schedule — pool quantities and areas")
     c.setFont("Helvetica", 10)
     y = h - 1.3 * inch
@@ -150,19 +150,19 @@ def build_review_pdf(snap: ProjectSnapshot, results: list[dict] | None = None) -
             "Method: pool_quantities (implemented; physics only — not pool-shell design). Input basis: demonstration_assumption.",
         ]
         for ln in lines:
-            c.drawString(inch, y, ln); y -= 0.22 * inch
+            c.drawString(inch, y, ln); y -= 0.27 * inch
     y -= 0.2 * inch
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Helvetica-Bold", 13)
     c.drawString(inch, y, "Area schedule (actual from canonical geometry vs program target)")
     y -= 0.25 * inch
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 10)
     for r in area_schedule(snap):
         tgt = f"{r['target_area_m2']:.2f}" if r['target_area_m2'] is not None else "—"
         delta = f"{r['delta_m2']:+.2f}" if r['delta_m2'] is not None else "—"
         c.drawString(inch, y, f"{r['level']:<16} {r['name']:<28} actual {r['actual_area_m2']:>8.2f} m2   target {tgt:>8}   delta {delta:>8}")
-        y -= 0.16 * inch
+        y -= 0.20 * inch
         if y < inch:
-            c.showPage(); y = h - inch; c.setFont("Helvetica", 8)
+            c.showPage(); y = h - inch; c.setFont("Helvetica", 10)
     c.showPage()
     _extra_pages(c, snap, results or [])
     c.save()
