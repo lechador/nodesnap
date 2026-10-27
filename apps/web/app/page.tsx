@@ -1,0 +1,201 @@
+"use client";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+
+const Plan2D = dynamic(() => import("./Plan2D"), { ssr: false });
+const Villa3D = dynamic(() => import("./Villa3D"), { ssr: false });
+
+const LEVELS = ["basement", "ground", "upper", "roof"] as const;
+
+async function api(path: string, opts: RequestInit = {}) {
+  const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j?.detail ?? `HTTP ${r.status}`);
+  return j.data;
+}
+
+export default function Home() {
+  const [snap, setSnap] = useState<any>(null);
+  const [projectId, setProjectId] = useState("");
+  const [level, setLevel] = useState<string>("ground");
+  const [view, setView] = useState<"plan" | "3d">("plan");
+  const [selected, setSelected] = useState<string>("");
+  const [results, setResults] = useState<any[]>([]);
+  const [coverage, setCoverage] = useState<any[]>([]);
+  const [poolLen, setPoolLen] = useState("8");
+  const [msg, setMsg] = useState("Starting demo session…");
+  const [artifact, setArtifact] = useState<any>(null);
+  const [chat, setChat] = useState("");
+
+  async function load(pid: string, rid: string) {
+    const s = await api(`/api/v1/projects/${pid}/revisions/${rid}`);
+    setSnap(s);
+    const a = await api(`/api/v1/projects/${pid}/analyses`, {
+      method: "POST", body: JSON.stringify({ revision_id: rid }),
+    });
+    setResults(a.results);
+    const c = await api(`/api/v1/projects/${pid}/coverage?revision_id=${rid}`);
+    setCoverage(c.methods);
+  }
+
+  async function start() {
+    try {
+      await api("/api/v1/demo/sessions", { method: "POST" });
+      const p = await api("/api/v1/projects", { method: "POST", body: JSON.stringify({ seed: true }) });
+      setProjectId(p.project_id);
+      await load(p.project_id, p.revision_id);
+      setMsg("Seed villa loaded — Demo Villa NYC-01 (synthetic site, no real address).");
+    } catch (e: any) { setMsg(`Error: ${e.message}`); }
+  }
+  useEffect(() => { start(); }, []);
+
+  async function applyPool() {
+    try {
+      const out = await api(`/api/v1/projects/${projectId}/commands`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "If-Match": `"${snap.revision_id}"` },
+        body: JSON.stringify({ base_revision_id: snap.revision_id,
+          commands: [{ type: "set_pool_dimensions", water_length_m: Number(poolLen) }] }),
+      });
+      setArtifact(null);
+      await load(projectId, out.revision_id);
+      setMsg(`Pool resized → revision ${out.revision_number}. Previous results invalidated and recalculated.`);
+    } catch (e: any) { setMsg(`Edit rejected: ${e.message}`); }
+  }
+
+  async function exportPdf() {
+    const m = await api(`/api/v1/projects/${projectId}/exports`, {
+      method: "POST", body: JSON.stringify({ revision_id: snap.revision_id }) });
+    setArtifact(m);
+  }
+
+  async function sendChat() {
+    const r = await api(`/api/v1/projects/${projectId}/conversations`, {
+      method: "POST", body: JSON.stringify({ text: chat, base_revision_id: snap.revision_id }) });
+    setMsg(r.execution_status === "blocked"
+      ? `Meta blocked: ${r.issue?.message}`
+      : `Meta (${r.model}): response received — see server log.`);
+  }
+
+  const poolQ = results.find((r) => r.method_id === "pool_quantities")?.quantities;
+  const sel = snap?.spaces.find((s: any) => s.id === selected);
+
+  return (
+    <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#1c2733", background: "#ece9e2", minHeight: "100vh" }}>
+      <header style={{ background: "#20262e", color: "#f2efe8", padding: "14px 22px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div>
+          <span style={{ fontSize: 26, letterSpacing: 0.5 }}>NodeSnap</span>
+          <span style={{ marginLeft: 14, opacity: 0.75, fontSize: 13 }}>
+            Describe a home → coordinated design, real calculations, professional review package
+          </span>
+        </div>
+        <div style={{ fontSize: 13 }}>
+          {snap ? <>Revision {snap.revision_number} · <code>{snap.content_hash.slice(0, 10)}…</code></> : "…"}
+          <button onClick={exportPdf} disabled={!snap}
+            style={{ marginLeft: 16, background: "#c96f2e", color: "white", border: 0, padding: "8px 14px", cursor: "pointer", fontSize: 14 }}>
+            Export review PDF
+          </button>
+        </div>
+      </header>
+
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr 330px", gap: 0, alignItems: "start" }}>
+        <aside style={{ padding: 18, borderRight: "1px solid #cfc9ba" }}>
+          <h3 style={{ marginTop: 0 }}>Brief</h3>
+          <p style={{ fontSize: 14, lineHeight: 1.5 }}>
+            Contemporary luxury villa, NYC demonstration. Two floors, six principal rooms per floor,
+            basement indoor pool, occupied roof terrace. Steel frame, timber secondary, concrete basement/pool.
+          </p>
+          <p style={{ fontSize: 13, background: "#fff8e6", padding: 10, border: "1px solid #e3d29a" }}>
+            Site: <b>Demo Villa NYC-01</b> — synthetic 30 × 45 m context. No real address or BBL.
+            Quantities below are demonstration assumptions unless labelled derived.
+          </p>
+          <h4>Conversation</h4>
+          <textarea value={chat} onChange={(e) => setChat(e.target.value)} rows={3}
+            placeholder="Describe your home, or ask for a change…"
+            style={{ width: "100%", boxSizing: "border-box", padding: 8 }} />
+          <button onClick={sendChat} disabled={!snap || !chat}
+            style={{ marginTop: 8, padding: "7px 12px", cursor: "pointer" }}>Send to Meta</button>
+          <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#5a4632" }}>{msg}</p>
+
+          <h4>Try a real change</h4>
+          <label style={{ fontSize: 13 }}>Pool water length (m)
+            <input value={poolLen} onChange={(e) => setPoolLen(e.target.value)}
+              style={{ width: 70, marginLeft: 8, padding: 5 }} />
+          </label>
+          <button onClick={applyPool} disabled={!snap}
+            style={{ marginLeft: 8, padding: "7px 12px", cursor: "pointer" }}>Apply</button>
+          <p style={{ fontSize: 12.5 }}>Commits a typed command, creates a new revision, reruns pool + area calculations.</p>
+
+          {artifact && (
+            <p style={{ fontSize: 13 }}>
+              <a href={`/artifacts/${artifact.artifact_id}`}>Download PDF — revision {artifact.revision_number}</a>
+              <br />SHA-256 {artifact.file_sha256.slice(0, 16)}… · {artifact.document_presence} · {artifact.review_status}
+            </p>
+          )}
+        </aside>
+
+        <main style={{ padding: 18 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            {LEVELS.map((l) => (
+              <button key={l} onClick={() => setLevel(l)}
+                style={{ padding: "7px 12px", cursor: "pointer", fontWeight: level === l ? 700 : 400,
+                         background: level === l ? "#26303c" : "white", color: level === l ? "white" : "#26303c", border: "1px solid #26303c" }}>
+                {l[0].toUpperCase() + l.slice(1)}
+              </button>
+            ))}
+            <span style={{ flex: 1 }} />
+            {(["plan", "3d"] as const).map((v) => (
+              <button key={v} onClick={() => setView(v)}
+                style={{ padding: "7px 12px", cursor: "pointer", fontWeight: view === v ? 700 : 400,
+                         background: view === v ? "#c96f2e" : "white", color: view === v ? "white" : "#26303c", border: "1px solid #c96f2e" }}>
+                {v === "plan" ? "Plan" : "3D"}
+              </button>
+            ))}
+          </div>
+          {snap ? (view === "plan"
+            ? <Plan2D snap={snap} level={level} selected={selected} onSelect={setSelected} />
+            : <Villa3D snap={snap} level={level} />)
+            : <p>Loading…</p>}
+          <p style={{ fontSize: 12.5, color: "#555" }}>
+            Plan and 3D are derived views of the same canonical model — neither owns dimensions.
+            Click a room to inspect it.
+          </p>
+        </main>
+
+        <aside style={{ padding: 18, borderLeft: "1px solid #cfc9ba", fontSize: 13.5 }}>
+          <h3 style={{ marginTop: 0 }}>Inspector</h3>
+          {sel ? (
+            <p><b>{sel.name}</b><br />Use: {sel.use} · {sel.classification}<br />
+              Level: {snap.levels.find((l: any) => l.id === sel.level_id)?.label}</p>
+          ) : <p>Select a space in the plan.</p>}
+
+          <h4>Pool calculation (real, deterministic)</h4>
+          {poolQ ? (
+            <table cellPadding={3} style={{ borderCollapse: "collapse" }}>
+              <tbody>
+                <tr><td>Surface</td><td><b>{poolQ.surface_area_m2.toFixed(2)} m²</b></td></tr>
+                <tr><td>Volume</td><td><b>{poolQ.volume_m3.toFixed(2)} m³</b></td></tr>
+                <tr><td>Water mass</td><td><b>{poolQ.mass_kg.toLocaleString()} kg</b></td></tr>
+                <tr><td>Water weight</td><td><b>{poolQ.weight_n.toLocaleString(undefined, { maximumFractionDigits: 0 })} N</b></td></tr>
+                <tr><td>Max hydrostatic pressure</td><td><b>{poolQ.max_hydrostatic_pressure_pa.toFixed(0)} Pa</b></td></tr>
+              </tbody>
+            </table>
+          ) : <p>Not calculated yet.</p>}
+          <p style={{ color: "#6b5a43" }}>Method <code>pool_quantities</code> — physics only, not pool-shell design.
+            Check outcome: <b>not_evaluated</b>. Input basis: demonstration_assumption.</p>
+
+          <h4>Coverage &amp; honest gaps</h4>
+          <ul style={{ paddingLeft: 18, lineHeight: 1.6 }}>
+            {coverage.map((m) => (
+              <li key={m.id}><code>{m.id}</code> — {m.method_state}
+                {m.method_state === "research_required" && <span style={{ color: "#a33" }}> (gap, not a pass)</span>}
+              </li>
+            ))}
+          </ul>
+          <p style={{ color: "#6b5a43" }}>Workflow and discipline completion are tracked separately.
+            Nothing above claims NYC code compliance, professional review, or DOB approval.</p>
+        </aside>
+      </div>
+    </div>
+  );
+}

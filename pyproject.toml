@@ -1,0 +1,15 @@
+[project]
+name = "nodesnap"
+version = "0.1.0"
+description = "NodeSnap — conversation to coordinated house design (Meta AI Developer Hackathon)"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["apps/api", "packages/domain", "packages/geometry", "packages/engineering", "packages/reports"]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8"]

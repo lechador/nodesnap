@@ -1,0 +1,33 @@
+services:
+  web:
+    build: { context: ../apps/web }
+    environment: { NODESNAP_API: "http://api:8000" }
+    depends_on: [api]
+    ports: ["3000:3000"]
+  api:
+    build: { context: .., dockerfile: infra/Dockerfile.api }
+    environment:
+      DATABASE_URL: "postgresql+psycopg://nodesnap:nodesnap@postgres:5432/nodesnap"
+      REDIS_URL: "redis://redis:6379/0"
+      ARTIFACT_ROOT: "/data/artifacts"
+      META_API_KEY: "${META_API_KEY:-}"
+    volumes: ["artifacts:/data/artifacts"]
+    depends_on: [postgres, redis]
+    ports: ["8000:8000"]
+  worker:
+    build: { context: .., dockerfile: infra/Dockerfile.api }
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: "postgresql+psycopg://nodesnap:nodesnap@postgres:5432/nodesnap"
+      REDIS_URL: "redis://redis:6379/0"
+      ARTIFACT_ROOT: "/data/artifacts"
+    volumes: ["artifacts:/data/artifacts"]
+    depends_on: [postgres, redis]
+  postgres:
+    image: postgres:17
+    environment: { POSTGRES_USER: nodesnap, POSTGRES_PASSWORD: nodesnap, POSTGRES_DB: nodesnap }
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7
+    volumes: ["redisdata:/data"]
+volumes: { pgdata: {}, redisdata: {}, artifacts: {} }
