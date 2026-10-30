@@ -1,0 +1,5 @@
+# DOMAIN unset -> plain HTTP on :80 (local smoke test only; mic needs HTTPS).
+# DOMAIN set to a hostname -> Caddy obtains a Let's Encrypt cert automatically.
+{$DOMAIN::80} {
+	reverse_proxy web:3000
+}
