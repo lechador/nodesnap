@@ -1,5 +1,35 @@
 # Build status
 
+## 2026-10-30 — Public repo + Linode production deploy LIVE
+
+- Public repo: https://github.com/lechador/nodesnap (pre-push secret/personal-data
+  scan clean; `.env`, `nodesnap.db`, `artifacts/` verified gitignored).
+- Linode `nodesnap` id 109659783, us-east, g6-standard-4 (4 vCPU / 8 GB, $48/mo
+  against the $100/60-day credit), Ubuntu 24.04, IP 23.92.16.155. Docker +
+  Compose installed; ufw 22/80/443; SSH key-only (root password generated to a
+  local 600 file, never in chat/repo).
+- URL: **https://23-92-16-155.sslip.io** (Caddy + Let's Encrypt, cert verified;
+  swap for a founder subdomain later — see docs/deployment.md).
+- First-ever Compose test — 3 bugs found and fixed in-tree:
+  (1) pnpm ignored-build-scripts failure in web image → `strict-dep-builds=false`;
+  (2) `/health` 500: Next rewrites are baked at build time, runtime
+  `NODESNAP_API` still pointed to localhost → build arg in Dockerfile + Compose;
+  (3) missing `restart` policy → `unless-stopped` on all services.
+  Also: Compose now only publishes Caddy; server `.env` is `infra/.env` (600).
+- Verified over HTTPS from outside: home 200, `/health` ok (Meta configured,
+  fresh spend $0), session → seed project → pool analysis exact (28 m² /
+  39.20 m³ / 384,421 N), 11-page export PDF SHA-256 matches manifest,
+  live Meta chat "make the pool 11 metres long" → revision 2 ($0.0225),
+  `docker compose down && up` → revision 2, identical PDF and spend ledger
+  all persist. Browser: plan + 3D render (3D needed a resize event in the
+  headless harness; same code as local QA).
+- Env audit: code reads META_API_KEY/BASE_URL/REASONING/TRANSCRIPTION models,
+  DATABASE_URL, ARTIFACT_ROOT, APP_SPEND_CEILING_USD only. `SESSION_SECRET`,
+  `REDIS_URL`, `DEMO_MODE` in .env.example are not read by the code.
+- Gaps: sslip.io hostname is a placeholder (founder domain pending); Linode
+  firewall not used (host ufw instead, token has no firewall need); backup
+  snapshot not yet taken.
+
 ## 2026-10-27 — Planning + M0/M1 slice working
 
 - Read the full master specification (1,215 lines, Parts A–E). Spec moved to

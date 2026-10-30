@@ -1,5 +1,6 @@
 services:
   caddy:
+    restart: unless-stopped
     image: caddy:2
     environment:
       DOMAIN: "${DOMAIN:-}"
@@ -13,12 +14,14 @@ services:
       - caddy_config:/config
     depends_on: [web]
   web:
+    restart: unless-stopped
     build:
       context: ../apps/web
       args: { NODESNAP_API: "http://api:8000" }
     environment: { NODESNAP_API: "http://api:8000" }
     depends_on: [api]
   api:
+    restart: unless-stopped
     build: { context: .., dockerfile: infra/Dockerfile.api }
     environment:
       DATABASE_URL: "postgresql+psycopg://nodesnap:${POSTGRES_PASSWORD:-nodesnap}@postgres:5432/nodesnap"
@@ -31,10 +34,12 @@ services:
     volumes: ["artifacts:/data/artifacts"]
     depends_on: [postgres, redis]
   postgres:
+    restart: unless-stopped
     image: postgres:17
     environment: { POSTGRES_USER: nodesnap, POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-nodesnap}", POSTGRES_DB: nodesnap }
     volumes: ["pgdata:/var/lib/postgresql/data"]
   redis:
+    restart: unless-stopped
     image: redis:7
     volumes: ["redisdata:/data"]
 volumes: { pgdata: {}, redisdata: {}, artifacts: {}, caddy_data: {}, caddy_config: {} }
