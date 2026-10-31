@@ -21,6 +21,13 @@ Live since 2026-10-30: Linode `nodesnap` (us-east, 4 vCPU / 8 GB) at
 Namecheap, Let's Encrypt certs for both names verified 2026-10-30).
 Fallback hostname https://23-92-16-155.sslip.io no longer configured.
 
+Rewrite deployed 2026-10-31 from application commit `396f9cc` (build checkout
+`d9e9f0a`). The server checkout is `/opt/nodesnap`; only `api` and `web` were
+rebuilt/recreated. Existing environment, volumes, Caddy, Postgres and Redis remain
+in place. HTTPS apex/www, the public API, live Meta new-building/add-level flow,
+revision/access checks and actual PDF outputs were verified. See
+`docs/build-status.md` for the release evidence and remaining product limitations.
+
 Not yet in Compose: a queue worker. Analyses/exports currently execute in the API process
 and are recorded in Postgres; Redis is provisioned for the RQ worker that moves them
 out of process. Do not claim async job behaviour until that worker exists and is tested.
@@ -40,12 +47,32 @@ cd apps/web && pnpm install && pnpm build && pnpm start --port 3000
   content-hashed in its export manifest.
 - No secrets in the repository: `.env` is gitignored; only `.env.example` is committed.
 
+The verified pre-rewrite backup is `/root/nodesnap-backups/20261031T192316Z` on the
+server, with a private off-server copy at
+`~/.local/share/nodesnap/backups/20261031T192316Z` on the deployment Mac. It contains
+`database.dump`, `artifacts.tar.gz`, `production.env`, baseline hashes, image
+references, and restore/upgrade verification records. Keep these files private.
+Both database and artifact restoration were tested in isolated temporary locations;
+the new API's additive schema startup was rehearsed against restored PostgreSQL
+before upgrading production. Old images are retained as
+`nodesnap-rollback-api:20261031t192316z` and
+`nodesnap-rollback-web:20261031t192316z`. Recovery must account for revisions written
+after the backup; do not blindly restore the old database over newer work.
+
+SSH uses the dedicated local key `~/.ssh/nodesnap_deploy_ed25519`, for example:
+```bash
+ssh -i ~/.ssh/nodesnap_deploy_ed25519 -o IdentitiesOnly=yes root@23.92.16.155
+```
+The original server key remains authorized. Neither private keys nor production
+environment contents belong in this repository.
+
 ## 2026-10-31 rewrite compatibility
 
 The rewrite preserves the existing Linode host, hostname configuration, Caddy routing,
 service names, ports, Dockerfiles, Compose topology, volume names and build-time
-`NODESNAP_API` proxy configuration. No production deploy, DNS/billing change or
-remote migration was performed as part of the local rewrite verification.
+`NODESNAP_API` proxy configuration. Local rewrite verification initially preceded
+deployment; the completed production release and PostgreSQL rehearsal are recorded
+above. No DNS/billing change was needed.
 
 API startup uses SQLAlchemy `metadata.create_all` to add the new mutation receipts,
 command receipts, project events, artifact records, conversations, conversation leases
