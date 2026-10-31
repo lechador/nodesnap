@@ -72,7 +72,11 @@ class DesignBuilding(Command):
     program: BuildingProgram
 
 
-TypedCommand = Annotated[SetPoolDimensions | MoveSpace | MoveWall | SetTerraceArea | SetLevelHeight | SetMaterialPalette | AddLevel | RemoveLevel | DesignBuilding,
+class UpgradeArchitecture(Command):
+    type: Literal["upgrade_architecture"] = "upgrade_architecture"
+
+
+TypedCommand = Annotated[SetPoolDimensions | MoveSpace | MoveWall | SetTerraceArea | SetLevelHeight | SetMaterialPalette | AddLevel | RemoveLevel | DesignBuilding | UpgradeArchitecture,
                          Field(discriminator="type")]
 COMMAND_ADAPTER = TypeAdapter(TypedCommand)
 
@@ -249,7 +253,13 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
         raise CommandError("A command ID cannot occur twice in one batch.")
     snap = snapshot.model_copy(deep=True)
     for cmd in commands:
-        if isinstance(cmd, SetPoolDimensions):
+        if isinstance(cmd, UpgradeArchitecture):
+            from .legacy import upgrade_legacy_architecture
+            try:
+                upgrade_legacy_architecture(snap)
+            except ValueError as exc:
+                raise CommandError(str(exc)) from exc
+        elif isinstance(cmd, SetPoolDimensions):
             if all(getattr(cmd, field) is None for field in ("water_length_m", "water_width_m", "water_depth_m")):
                 raise CommandError("set_pool_dimensions stated no dimension")
             if snap.pool is None:

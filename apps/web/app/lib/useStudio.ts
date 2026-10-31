@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, mutationOptions } from "./api";
 import { errorMessage } from "./format";
+import { ensureArchitecture } from "./legacy-upgrade";
 import type {
   BuildingSnapshot,
   ProjectSummary,
@@ -46,10 +47,19 @@ export function useStudio(
       setMessages((m) => [...m, { ...message, id: crypto.randomUUID() }]),
     [],
   );
-  async function load(pid: string, rid: string) {
-    const snapshot = await api<BuildingSnapshot>(
+  async function load(pid: string, rid: string, upgradeLegacy = false) {
+    let snapshot = await api<BuildingSnapshot>(
       `/api/v1/projects/${pid}/revisions/${rid}`,
     );
+    let upgraded = false;
+    if (upgradeLegacy) {
+      setBusy("Opening your saved building");
+      const opened = await ensureArchitecture(snapshot, api);
+      snapshot = opened.snapshot;
+      rid = snapshot.revision_id;
+      upgraded = opened.upgraded;
+      if (opened.error) setError(errorMessage(opened.error));
+    }
     const previous = current.current;
     current.current = snapshot;
     setSnap(snapshot);
@@ -90,6 +100,7 @@ export function useStudio(
       );
     if (c.status === "fulfilled") setMethods(c.value.methods);
     if (h.status === "fulfilled") setHistory(h.value);
+    return upgraded;
   }
   async function loadConversation(pid: string) {
     const rows = await api<
@@ -150,9 +161,10 @@ export function useStudio(
       if (pid) {
         try {
           const project = await api<ProjectSummary>(`/api/v1/projects/${pid}`);
-          await load(pid, project.revision_id);
+          const upgraded = await load(pid, project.revision_id, true);
           resetHistory();
           await loadConversation(pid);
+          if (upgraded) restoredVillaMessage();
           setActivity("Model saved. Explore a floor or describe a change.");
         } catch (e) {
           if (e instanceof ApiError && [403, 404].includes(e.status)) {
@@ -177,9 +189,10 @@ export function useStudio(
     try {
       const project = await api<ProjectSummary>(`/api/v1/projects/${pid}`);
       setMessages([]);
-      await load(pid, project.revision_id);
+      const upgraded = await load(pid, project.revision_id, true);
       resetHistory();
       await loadConversation(pid);
+      if (upgraded) restoredVillaMessage();
       setActivity("Building opened. Continue where you left off.");
     } catch (e) {
       setError(errorMessage(e));
@@ -187,6 +200,13 @@ export function useStudio(
       lock.current = false;
       setBusy("");
     }
+  }
+  function restoredVillaMessage() {
+    addMessage({
+      role: "assistant",
+      text: "Your original villa is ready again. Its rooms, pool and saved history are retained. Stair access and service zones were coordinated in a new revision; the adjustments are recorded with the design.",
+      revision: current.current?.revision_number,
+    });
   }
   async function openDemo() {
     if (lock.current) return;

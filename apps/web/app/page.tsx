@@ -830,25 +830,17 @@ export default function Home() {
                 {!snap.architecture && (
                   <div className="legacy-upgrade">
                     <p>
-                      This saved revision predates architectural walls and
-                      openings.
+                      Your saved villa is preserved. Restore its model to
+                      continue exploring and editing.
                     </p>
                     <button
                       className="primary-button"
                       disabled={!!busy}
                       onClick={() =>
-                        void studio.command(
-                          [
-                            {
-                              type: "set_material_palette",
-                              palette: snap.material_palette ?? "limestone_oak",
-                            },
-                          ],
-                          "Updating architectural model",
-                        )
+                        void studio.openProject(snap.project_id)
                       }
                     >
-                      Create an architectural revision
+                      Restore saved villa
                     </button>
                   </div>
                 )}

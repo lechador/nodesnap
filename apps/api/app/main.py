@@ -276,6 +276,12 @@ def regenerated(snapshot, level, rooms):
 
 def restored_snapshot(current, target):
     proposed = target.model_copy(deep=True)
+    if proposed.architecture is None and proposed.schema_version == "0.1.0":
+        from domain.legacy import upgrade_legacy_architecture
+        try:
+            upgrade_legacy_architecture(proposed)
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
     proposed.parent_revision_id = current.revision_id
     proposed.revision_id = new_id()
     proposed.revision_number = current.revision_number + 1

@@ -84,9 +84,14 @@ compatibility tests are not a production PostgreSQL upgrade rehearsal.
 
 Stored 0.1 snapshots are loaded without rewriting their bytes or historical hashes.
 New revisions use schema 0.2 and contain revision-bound architectural geometry.
-Legacy revisions without architecture remain identified as such; use the current
-supported template for the full architectural experience. Historical artifacts remain
-immutable and must not be overwritten by a new export.
+Opening a current original-villa project without architecture now sends the typed
+`upgrade_architecture` command. Recognized original service layouts are coordinated
+in a new validated revision; existing principal rooms, pool, terrace, entity IDs and
+historical bytes remain intact. Changed support footprints and added access/stair
+zones are explicitly recorded as concept assumptions. Unsupported custom layouts
+are rejected without a seed replacement. This happens through the owner-authorized
+mutation route, never a read-time rewrite or bulk database migration. Historical
+artifacts remain immutable and must not be overwritten by a new export.
 
 On macOS development, use a writable local artifact directory such as
 `ARTIFACT_ROOT=./artifacts`; `/data/artifacts` is the existing container mount. Keep
