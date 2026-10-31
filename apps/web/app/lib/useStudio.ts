@@ -79,7 +79,6 @@ export function useStudio(
     setArtifact(null);
     setMethods([]);
     setHistory([]);
-    localStorage.setItem("nodesnap.project", pid);
     setBusy("Updating calculations");
     const [a, c, h] = await Promise.allSettled([
       api<{ results: Result[] }>(`/api/v1/projects/${pid}/analyses`, {
@@ -153,26 +152,17 @@ export function useStudio(
         ),
       ]);
       if (list.status === "fulfilled") setProjects(list.value);
+      else
+        setError(
+          `Saved buildings could not load: ${errorMessage(list.reason)}`,
+        );
       if (health.status === "fulfilled")
         setProvider(
           health.value.meta_configured ?? health.value.meta?.configured ?? null,
         );
-      const pid = localStorage.getItem("nodesnap.project");
-      if (pid) {
-        try {
-          const project = await api<ProjectSummary>(`/api/v1/projects/${pid}`);
-          const upgraded = await load(pid, project.revision_id, true);
-          resetHistory();
-          await loadConversation(pid);
-          if (upgraded) restoredVillaMessage();
-          setActivity("Model saved. Explore a floor or describe a change.");
-        } catch (e) {
-          if (e instanceof ApiError && [403, 404].includes(e.status)) {
-            localStorage.removeItem("nodesnap.project");
-            setActivity("Describe your first building.");
-          } else throw e;
-        }
-      } else setActivity("Describe your first building.");
+      // Visiting the site opens the homepage. A model is loaded or migrated
+      // only after the user explicitly chooses an existing building.
+      setActivity("Start a new building or choose one you’ve saved.");
     } catch (e) {
       setError(errorMessage(e));
       setActivity("Studio could not connect. Retry to continue.");
@@ -281,7 +271,6 @@ export function useStudio(
     if (init.current) return;
     init.current = true;
     void start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize one session per mount
   }, []); // one session, even with development Strict Mode
   async function failure(e: unknown) {
     const msg = errorMessage(e);

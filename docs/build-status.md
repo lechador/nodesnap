@@ -1,5 +1,13 @@
 # Build status
 
+## 2026-10-31 — Homepage before building selection
+
+- **Behavior:** every fresh visit/reload opens a neutral homepage with “Build a new house”, all saved buildings, and an explicitly optional example villa. Startup establishes the session and reads project summaries/health only; it no longer reads or writes the obsolete `nodesnap.project` selection. Models, legacy upgrades and calculations wait for an explicit selection. Existing projects and revisions are preserved.
+- **Navigation:** the new-house action opens the text/voice brief. Explicit Home controls return from both the brief and workspace; same-route brand links were replaced with real state transitions, keyboard focus follows the destination, and busy/microphone guards remain in place. A failed project-list fetch shows Retry instead of a false empty library. Mobile exposes the complete saved list.
+- **Verification:** all **34 frontend tests**, lint, TypeScript and production build passed. In Chrome, verified a fresh empty library, new brief and Back to home, explicit example opening with a real model canvas, Home with a saved entry, explicit saved-project opening, then reload returning to Home with zero canvases and the saved project retained. Local startup access logs contained only session, project-list and health requests. Desktop and 390px mobile layouts had no horizontal overflow. Impeccable detector returned no findings. Browser extensions injected Grammarly body attributes and a connection warning during local development; no application runtime failure was observed.
+- **Delivery:** web-only deployment pending; API, database, artifacts, environment and Compose topology are unchanged. Final production evidence will be recorded below after deployment.
+
+
 ## 2026-10-31 — Original saved villa compatibility repair
 
 - **Regression:** the rewritten viewer could not display persisted schema 0.1 villas. The previous upgrade button sent a material change, but merely deriving walls on the old service layout failed current connectivity checks: the original basement/roof lacked stair and circulation zones. The villa data was retained, but its main workspace was unusable.

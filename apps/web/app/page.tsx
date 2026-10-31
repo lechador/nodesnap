@@ -1,10 +1,10 @@
 "use client";
 import { survivingFloor } from "./lib/levels";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./components/Icon";
 import NewDesign from "./components/NewDesign";
+import StudioHome from "./components/StudioHome";
 import { useStudio } from "./lib/useStudio";
 import { useMicrophone } from "./lib/useMicrophone";
 import { area, areaLabel, bounds, length, title } from "./lib/format";
@@ -193,7 +193,16 @@ function ResultPanel({
   );
 }
 export default function Home() {
-  const [newDesign, setNewDesign] = useState(false);
+  const [screen, setScreen] = useState<"home" | "new" | "workspace">("home");
+  const previousScreen = useRef(screen);
+  useEffect(() => {
+    if (previousScreen.current !== screen) {
+      document
+        .querySelector<HTMLElement>("[data-screen-heading]")
+        ?.focus({ preventScroll: true });
+      previousScreen.current = screen;
+    }
+  }, [screen]);
   const [view, setView] = useState<View>("3d"),
     [level, setLevel] = useState("ground"),
     [selected, setSelected] = useState(""),
@@ -227,7 +236,7 @@ export default function Home() {
       value: string;
     } | null>(null);
   const studio = useStudio((next, previous) => {
-    setNewDesign(false);
+    setScreen("workspace");
     const replaced =
       previous?.project_id === next.project_id &&
       previous.levels.every((old) => !next.levels.some((l) => l.id === old.id));
@@ -402,7 +411,23 @@ export default function Home() {
   }
   const issues = results.flatMap((r) => r.issues ?? []),
     loading = !snap;
-  if (newDesign || !snap)
+  if (screen === "home")
+    return (
+      <StudioHome
+        busy={busy}
+        ready={studio.ready}
+        error={error}
+        projects={studio.projects}
+        onNew={() => {
+          studio.setError("");
+          setScreen("new");
+        }}
+        onOpen={(pid) => void studio.openProject(pid)}
+        onDemo={() => void studio.openDemo()}
+        onRetry={() => void studio.start()}
+      />
+    );
+  if (screen === "new" || !snap)
     return (
       <NewDesign
         busy={busy}
@@ -414,7 +439,10 @@ export default function Home() {
         onDemo={() => void studio.openDemo()}
         onRetry={() => void studio.start()}
         onError={studio.setError}
-        onCancel={snap ? () => setNewDesign(false) : undefined}
+        onHome={() => {
+          studio.setError("");
+          setScreen("home");
+        }}
       />
     );
   return (
@@ -422,9 +450,17 @@ export default function Home() {
       className={`studio ${!chatOpen ? "chat-collapsed" : ""} ${!inspectorOpen ? "inspector-collapsed" : ""} mobile-${mobileTab}`}
     >
       <header className="topbar">
-        <Link className="home-brand" href="/" aria-label="NodeSnap studio">
+        <button
+          className="home-brand"
+          aria-label="Go to homepage"
+          disabled={!!busy || mic.state !== "idle"}
+          onClick={() => {
+            studio.setError("");
+            setScreen("home");
+          }}
+        >
           <Brand />
-        </Link>
+        </button>
         <div className="project-heading">
           <select
             className="project-picker"
@@ -452,7 +488,7 @@ export default function Home() {
             disabled={!!busy || mic.state !== "idle"}
             onClick={() => {
               studio.setError("");
-              setNewDesign(true);
+              setScreen("new");
             }}
           >
             <Icon name="plus" size={15} />
@@ -717,7 +753,12 @@ export default function Home() {
           Design intent first. Verified geometry always.
         </p>
       </aside>
-      <main className="workspace">
+      <main
+        className="workspace"
+        data-screen-heading
+        tabIndex={-1}
+        aria-label="Building workspace"
+      >
         <div className="workspace-toolbar">
           {!chatOpen && (
             <button
@@ -836,9 +877,7 @@ export default function Home() {
                     <button
                       className="primary-button"
                       disabled={!!busy}
-                      onClick={() =>
-                        void studio.openProject(snap.project_id)
-                      }
+                      onClick={() => void studio.openProject(snap.project_id)}
                     >
                       Restore saved villa
                     </button>
@@ -1160,7 +1199,7 @@ export default function Home() {
                 disabled={!!busy || mic.state !== "idle"}
                 onClick={() => {
                   studio.setError("");
-                  setNewDesign(true);
+                  setScreen("new");
                 }}
               >
                 <Icon name="plus" size={15} />

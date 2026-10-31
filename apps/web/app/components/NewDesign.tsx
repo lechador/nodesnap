@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Icon from "./Icon";
 import { useMicrophone } from "../lib/useMicrophone";
 import type { BriefTurn, DesignResponse, ProjectSummary } from "../lib/types";
@@ -32,7 +31,7 @@ type Props = {
   onDemo: () => void;
   onRetry: () => void;
   onError: (message: string) => void;
-  onCancel?: () => void;
+  onHome: () => void;
 };
 
 export default function NewDesign({
@@ -45,7 +44,7 @@ export default function NewDesign({
   onDemo,
   onRetry,
   onError,
-  onCancel,
+  onHome,
 }: Props) {
   const [text, setText] = useState("");
   const [turns, setTurns] = useState<BriefTurn[]>([]);
@@ -99,26 +98,25 @@ export default function NewDesign({
   return (
     <div className="new-design-shell">
       <header className="new-design-header">
-        <Link
-          href="/"
+        <button
           className="new-design-brand"
-          aria-label="NodeSnap studio"
+          aria-label="Go to homepage"
+          onClick={onHome}
+          disabled={!!busy || mic.state !== "idle"}
         >
           <Icon name="cube" size={25} />
           <span>nodesnap.</span>
-        </Link>
+        </button>
         <span>Architectural design studio</span>
-        {onCancel && (
-          <button disabled={!!busy || mic.state !== "idle"} onClick={onCancel}>
-            <Icon name="chevron" size={14} />
-            <span>Back to your building</span>
-          </button>
-        )}
+        <button disabled={!!busy || mic.state !== "idle"} onClick={onHome}>
+          <Icon name="chevron" size={14} />
+          <span>Back to home</span>
+        </button>
       </header>
       <main className="new-design-main">
         <section className="new-brief" aria-label="New building brief">
           <div className="new-brief-heading">
-            <h1>
+            <h1 data-screen-heading tabIndex={-1}>
               What would you
               <br />
               like to build?

@@ -5,6 +5,9 @@ Mode: Operate. Code-led extension of the established architectural exhibition wo
 ## THESIS
 Turn the visitor's own building brief into a distinct saved architectural project. Show a fresh starting point, not a preselected villa that must be edited into something else.
 
+## ENTRY
+The homepage now precedes this composer. The user enters it through “Build a new house” or the workspace’s new-building control. Both the brand and Back to home return to the homepage; navigation is disabled while recording, transcribing or creating.
+
 ## FIRST VIEWPORT
 Charcoal studio navigation, a large direct question, one text/voice composer and three concrete starting briefs. A quiet empty drawing sheet anticipates the real model without fabricating a building before the brief is accepted. Saved buildings and the optional example remain easy to open. On mobile the composer leads and the empty sheet recedes.
 
