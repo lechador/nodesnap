@@ -1,54 +1,47 @@
-"""Assemble a generated floor into canonical Spaces — spec A5.2 stages 4-6
-(bounded: circulation is the reserved corridor band; doors/openings and
-wall-thickness derivation remain M2 follow-ups, recorded in build-status)."""
+"""Assemble bounded solver output while preserving domain entity identities."""
 from __future__ import annotations
 
+from domain.architecture import rect, stable_id
 from domain.models import Space
 from .layout import solve_floor
 
-ENVELOPE_W_M, ENVELOPE_D_M = 18.0, 15.5
-
-
-def _rect(level_id, name, use, classification, x, y, w, d, target=None):
-    ring = [[x, y], [x + w, y], [x + w, y + d], [x, y + d], [x, y]]
-    return Space(level_id=level_id, name=name, use=use, classification=classification,
-                 polygon=ring, target_area_m2=target)
-
 
 def generate_floor(snapshot, level_name: str, rooms: list[dict]) -> dict:
-    """Returns {spaces, solver_status}; spaces replace that level's spaces."""
-    level = next(l for l in snapshot.levels if l.name == level_name)
+    if snapshot.building_program is not None:
+        from domain.building import regenerate_program_floor
+        return regenerate_program_floor(snapshot, level_name, rooms)
+    level = next((l for l in snapshot.levels if l.name == level_name), None)
+    ground = next((l for l in snapshot.levels if l.name == "ground"), None)
+    if (level is None or ground is None or level.name in {"basement", "roof"}
+            or level.elevation_m < ground.elevation_m
+            or sum(s.classification == "principal" for s in snapshot.spaces if s.level_id == level.id) != 6
+            or len(rooms) != 6):
+        return {"spaces": None, "solver_status": "MODEL_INVALID"}
     solved = solve_floor(rooms)
     if not solved["placements"]:
-        return {"spaces": None, "solver_status": solved["solver_status"]}
-    keep = [s for s in snapshot.spaces if s.level_id != level.id]
-    support = [s for s in snapshot.spaces
-               if s.level_id == level.id and s.classification == "support"
-               and s.use not in ("circulation",)]
-    new_spaces = list(keep)
-    for p in solved["placements"]:
-        new_spaces.append(_rect(level.id, p["name"], p["use"], "principal",
-                                p["x_m"], p["y_m"], p["width_m"], p["depth_m"],
-                                target=p["target_area_m2"]))
-    c = solved["corridor"]
-    new_spaces.append(_rect(level.id, "Circulation", "circulation", "support",
-                            c["x_m"], c["y_m"], c["width_m"], c["depth_m"]))
-    k = solved["core"]
-    # stairs occupy the first 5.5 m of the core; existing support rooms stack after
-    new_spaces.append(_rect(level.id, "Stairs / service core", "stairs_service",
-                            "support", k["x_m"], 0.0, k["width_m"], 5.5))
-    y = 5.5
-    for s in support:
-        if s.use in ("stairs_service",):
-            continue
-        xs = [pt[0] for pt in s.polygon]; ys = [pt[1] for pt in s.polygon]
-        h = max(ys) - min(ys)
-        if y + h > ENVELOPE_D_M:
-            h = ENVELOPE_D_M - y
-        if h <= 0:
-            break
-        new_spaces.append(_rect(level.id, s.name, s.use, "support",
-                                k["x_m"], y, k["width_m"], h,
-                                target=s.target_area_m2))
-        y += h
-    return {"spaces": new_spaces, "solver_status": solved["solver_status"]}
+        return {"spaces": None, "solver_status": solved["solver_status"], "settings": solved.get("settings")}
+    existing = [s for s in snapshot.spaces if s.level_id == level.id]
+    new_spaces = [s.model_copy(deep=True) for s in snapshot.spaces if s.level_id != level.id]
+    matched = set()
+    for index, p in enumerate(solved["placements"]):
+        original = next((s for s in existing if s.name == p["name"] and s.id not in matched), None)
+        if original is None:
+            original = next((s for s in existing if s.use == p["use"] and s.classification == "principal" and s.id not in matched), None)
+        identity = original.id if original else stable_id(snapshot.project_id, f"space:{level.id}:{p['name']}:{index}")
+        matched.add(identity)
+        new_spaces.append(Space(id=identity, level_id=level.id, name=p["name"], use=p["use"], classification="principal",
+                                polygon=rect(p["x_m"], p["y_m"], p["width_m"], p["depth_m"]), target_area_m2=p["target_area_m2"]))
+    # Keep fixed core and support identities. Seed owns aligned stair geometry.
+    new_spaces.extend(s.model_copy(deep=True) for s in existing if s.classification == "support" and s.use != "circulation")
+    corridor = next((s for s in existing if s.use == "circulation"), None)
+    new_spaces.append(Space(id=corridor.id if corridor else stable_id(snapshot.project_id, f"corridor:{level.id}"),
+                            level_id=level.id, name="Circulation", use="circulation", classification="support",
+                            polygon=rect(0, 6.95, 18, 1.6)))
+    # Leftover area remains explicit circulation rather than disappearing from
+    # the gross area ledger or being misleadingly included as net room area.
+    for side, y in (("south", 0.0), ("north", 8.55)):
+        end = max((p["x_m"] + p["width_m"] for p in solved["placements"] if p["strip"] == side), default=0.0)
+        if 15 - end > 1e-6:
+            new_spaces.append(Space(id=stable_id(snapshot.project_id, f"circulation:{level.id}:{side}"), level_id=level.id,
+                name=f"{side.title()} circulation", use="circulation", classification="support", polygon=rect(end, y, 15-end, 6.95)))
+    return {"spaces": new_spaces, "solver_status": solved["solver_status"], "settings": solved["settings"]}

@@ -1,85 +1,71 @@
-"""Bounded CP-SAT layout generation — spec A5.
+"""Bounded strip CP-SAT layout: 0.1 m widths, fixed connected circulation.
 
-Grammar (declared, limited): one floor plate 18.0 x 15.5 m, a horizontal
-corridor band, rooms in a north or south strip, east stair/service core.
-The solver chooses strip assignment and 0.1 m-grid widths so each room's
-area lands within +/-15% of its program target. CP-SAT status describes
-the encoded problem only — not code compliance.
+Area bounds round inward; solver status reports only this encoded family.
+Core and corridor are reserved before room placement. The fixed 6.95 m strips
+are an exact template dimension, not silently rounded to the planning grid.
 """
 from __future__ import annotations
 
+import math
 from ortools.sat.python import cp_model
 
-GRID = 10  # 0.1 m planning grid (spec A5.1)
-W_DM, D_DM = 180, 155
-CORRIDOR_DM, CORE_DM = 16, 30
-ROOM_W_DM = W_DM - CORE_DM
-SOUTH_H_DM = (D_DM - CORRIDOR_DM) // 2          # 69
-NORTH_H_DM = D_DM - CORRIDOR_DM - SOUTH_H_DM    # 70
+GRID = 10
+ROOM_W_DM = 150
+STRIP_DEPTH_M = 6.95
+CORRIDOR_Y_M = 6.95
+CORRIDOR_DEPTH_M = 1.6
 
 
 def solve_floor(rooms: list[dict], seed: int = 7, time_limit_s: float = 10.0) -> dict:
-    """rooms: [{name, use, target_area_m2}]. Returns status + placements in metres."""
-    m = cp_model.CpModel()
-    n = len(rooms)
-    north = [m.NewBoolVar(f"north_{i}") for i in range(n)]
-    # width in dm; bounded by strip depth-derived aspect sanity (min 2.0 m)
-    width = [m.NewIntVar(20, ROOM_W_DM, f"w_{i}") for i in range(n)]
-    # area in dm^2 = width * strip_height (depends on strip) -> two products
-    area_terms = []
-    for i, r in enumerate(rooms):
-        target_dm2 = int(round(r["target_area_m2"] * 100))
-        lo, hi = int(target_dm2 * 0.85), int(target_dm2 * 1.15)
-        a_south = m.NewIntVar(0, ROOM_W_DM * SOUTH_H_DM, f"as_{i}")
-        a_north = m.NewIntVar(0, ROOM_W_DM * NORTH_H_DM, f"an_{i}")
-        m.AddMultiplicationEquality(a_south, [width[i], m.NewConstant(SOUTH_H_DM)])
-        m.AddMultiplicationEquality(a_north, [width[i], m.NewConstant(NORTH_H_DM)])
-        area = m.NewIntVar(0, ROOM_W_DM * D_DM, f"a_{i}")
-        m.Add(area == a_north).OnlyEnforceIf(north[i])
-        m.Add(area == a_south).OnlyEnforceIf(north[i].Not())
-        m.Add(area >= lo)
-        m.Add(area <= hi)
-        area_terms.append(area)
-    # strip width budgets: rooms on a strip, in input order, cannot exceed plate
-    for is_north in (0, 1):
+    if (not 1 <= len(rooms) <= 12 or not math.isfinite(time_limit_s) or time_limit_s < 0
+            or any(not isinstance(r.get("target_area_m2"), (int, float))
+                   or not math.isfinite(r["target_area_m2"]) or r["target_area_m2"] <= 0 for r in rooms)):
+        return {"solver_status": "MODEL_INVALID", "placements": []}
+    model = cp_model.CpModel()
+    north = [model.new_bool_var(f"north_{i}") for i in range(len(rooms))]
+    widths = [model.new_int_var(20, ROOM_W_DM, f"width_{i}") for i in range(len(rooms))]
+    deviations = []
+    # Width units 0.1 m × depth 6.95 m = 695/1000 m² exactly.
+    for i, room in enumerate(rooms):
+        target = room["target_area_m2"] * 1000
+        model.add(widths[i] * 695 >= math.ceil(target * .85))
+        model.add(widths[i] * 695 <= math.floor(target * 1.15))
+        deviation = model.new_int_var(0, 2_000_000, f"deviation_{i}")
+        model.add_abs_equality(deviation, widths[i] * 695 - round(target))
+        deviations.append(deviation)
+    for side in (0, 1):
         terms = []
-        for i in range(n):
-            w_in = m.NewIntVar(0, ROOM_W_DM, f"win_{i}_{is_north}")
-            m.Add(w_in == width[i]).OnlyEnforceIf(north[i] if is_north else north[i].Not())
-            m.Add(w_in == 0).OnlyEnforceIf(north[i].Not() if is_north else north[i])
-            terms.append(w_in)
-        m.Add(sum(terms) <= ROOM_W_DM)
-    # objective: get close to targets
-    dev = []
-    for i, r in enumerate(rooms):
-        target_dm2 = int(round(r["target_area_m2"] * 100))
-        d = m.NewIntVar(0, ROOM_W_DM * D_DM, f"dev_{i}")
-        m.AddAbsEquality(d, area_terms[i] - target_dm2)
-        dev.append(d)
-    m.Minimize(sum(dev))
-
+        for i, width in enumerate(widths):
+            selected_width = model.new_int_var(0, ROOM_W_DM, f"side_{side}_{i}")
+            active = north[i] if side else north[i].Not()
+            model.add(selected_width == width).only_enforce_if(active)
+            model.add(selected_width == 0).only_enforce_if(active.Not())
+            terms.append(selected_width)
+        filled = model.new_bool_var(f"filled_{side}")
+        model.add(sum(terms) == ROOM_W_DM).only_enforce_if(filled)
+        model.add(sum(terms) <= ROOM_W_DM - 12).only_enforce_if(filled.Not())
+    model.minimize(sum(deviations))
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = time_limit_s
+    solver.parameters.max_time_in_seconds = min(time_limit_s, 15.0)
+    solver.parameters.max_deterministic_time = 1.0
     solver.parameters.num_search_workers = 1
     solver.parameters.random_seed = seed
-    status = solver.Solve(m)
-    status_name = solver.StatusName(status)
-    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        return {"solver_status": status_name, "placements": []}
+    result = solver.solve(model)
+    status = solver.status_name(result)
+    settings = {"planning_grid_m": .1, "seed": seed, "num_search_workers": 1,
+                "max_deterministic_time": 1.0, "max_time_in_seconds": min(time_limit_s, 15.0),
+                "family": "central_corridor_fixed_core", "target_area_basis": "wall_centerline_zone",
+                "clear_area_note": "Clear room areas subtract assumed wall thickness after placement and are reported separately; program net-area reconciliation remains visible."}
+    if result not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return {"solver_status": status, "placements": [], "settings": settings}
+    positions = {False: 0.0, True: 0.0}
     placements = []
-    x_south = x_north = 0.0
-    for i, r in enumerate(rooms):
-        w_m = solver.Value(width[i]) / GRID
-        if solver.Value(north[i]):
-            placements.append({**r, "x_m": x_north, "y_m": (SOUTH_H_DM + CORRIDOR_DM) / GRID,
-                               "width_m": w_m, "depth_m": NORTH_H_DM / GRID, "strip": "north"})
-            x_north += w_m
-        else:
-            placements.append({**r, "x_m": x_south, "y_m": 0.0,
-                               "width_m": w_m, "depth_m": SOUTH_H_DM / GRID, "strip": "south"})
-            x_south += w_m
-    return {"solver_status": status_name, "placements": placements,
-            "corridor": {"x_m": 0.0, "y_m": SOUTH_H_DM / GRID, "width_m": ROOM_W_DM / GRID,
-                         "depth_m": CORRIDOR_DM / GRID},
-            "core": {"x_m": ROOM_W_DM / GRID, "y_m": 0.0, "width_m": CORE_DM / GRID,
-                     "depth_m": D_DM / GRID}}
+    for i, room in enumerate(rooms):
+        side = bool(solver.value(north[i]))
+        width = solver.value(widths[i]) / GRID
+        placements.append({**room, "x_m": positions[side], "y_m": 8.55 if side else 0.0,
+                           "width_m": width, "depth_m": STRIP_DEPTH_M, "strip": "north" if side else "south"})
+        positions[side] += width
+    return {"solver_status": status, "placements": placements, "settings": settings,
+            "corridor": {"x_m": 0.0, "y_m": 6.95, "width_m": 18.0, "depth_m": 1.6},
+            "core": {"x_m": 15.0, "y_m": 0.0, "width_m": 3.0, "depth_m": 15.5}}

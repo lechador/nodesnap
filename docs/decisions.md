@@ -9,3 +9,10 @@
 | 2026-10-27 | three pinned to 0.180.0 | R3F scene rendered blank with three 0.186 in the harness browser; 0.180 verified by screenshot + pixel probe |
 | 2026-10-27 | Jobs execute in-process for M1; RQ worker in M6 | Keeps M1 contracts identical while deferring queue infra; recorded, not hidden |
 | 2026-10-27 | Docker = deployment path, direct processes = local dev | Compose gives judges/host one-command reproducibility for the 6-service spec architecture; local iteration stays faster without Docker Desktop, contracts kept identical via DATABASE_URL/REDIS_URL switches |
+| 2026-10-31 | Replace the workspace and backend services while preserving deployed infrastructure | User explicitly requested a complete application rewrite with the same deployment; no remote deployment/DNS/billing action taken |
+| 2026-10-31 | Canonical architecture schema 0.2 with legacy 0.1 hash preservation | Walls, openings, slabs, stairs and clear-area metrics must agree across 2D/3D/PDF; old revisions remain immutable |
+| 2026-10-31 | Physical envelope inside gross footprint; partitions on zone boundaries | Clear metrics deduct full exterior wall and half shared partition thickness; zone area and program targets remain distinct |
+| 2026-10-31 | Fixed connected core and central-corridor solver family | Stable stairs/circulation and valid shared openings take priority; arbitrary/freeform and side-corridor generation remain declared gaps |
+| 2026-10-31 | Separate presentation assets from canonical engineering | Procedural texture, furniture and landscape improve 3D legibility without inventing equipment capacities or physical design loads |
+| 2026-10-31 | Conservative result invalidation and explicit independent structural baseline | A fixed frame calculation cannot be presented as structural consequences of edited room/pool/facade geometry |
+| 2026-10-31 | Additive persistence tables and guarded head updates | Preserve existing deployed database rows while implementing idempotency, command replay protection, events and budget reservations |

@@ -6,27 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "types:generate": "openapi-typescript ../../packages/contracts/openapi.json -o app/lib/contracts.d.ts && cp app/lib/contracts.d.ts ../../packages/contracts/api.d.ts",
+    "format": "prettier --write app tests"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.9",
-    "@react-three/fiber": "^9.8.2",
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.2",
     "@types/three": "0.180.0",
-    "konva": "^10.9.0",
+    "konva": "10.9.0",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-konva": "^19.3.2",
-    "three": "^0.180.0",
-    "zustand": "^5.0.16"
+    "react-konva": "19.3.2",
+    "three": "0.180.0",
+    "zustand": "5.0.16"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
+    "@types/node": "20.19.43",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
-    "typescript": "^5"
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3"
   },
   "packageManager": "pnpm@11.21.0"
 }

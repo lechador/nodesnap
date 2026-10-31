@@ -1,898 +1,3162 @@
 {
- "openapi": "3.1.0",
- "info": {
-  "title": "NodeSnap API",
-  "version": "0.1.0"
- },
- "paths": {
-  "/health": {
-   "get": {
-    "summary": "Health",
-    "operationId": "health_health_get",
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     }
-    }
-   }
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NodeSnap Studio API",
+    "version": "0.2.0"
   },
-  "/api/v1/demo/sessions": {
-   "post": {
-    "summary": "Create Session",
-    "operationId": "create_session_api_v1_demo_sessions_post",
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects": {
-   "post": {
-    "summary": "Create Project",
-    "operationId": "create_project_api_v1_projects_post",
-    "parameters": [
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
         }
-       ],
-       "title": "Nodesnap Session"
       }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/CreateProject"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
+    "/api/v1/demo/sessions": {
+      "post": {
+        "summary": "Create Session",
+        "operationId": "create_session_api_v1_demo_sessions_post",
+        "parameters": [
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       }
       }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}": {
-   "get": {
-    "summary": "Get Project",
-    "operationId": "get_project_api_v1_projects__project_id__get",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/revisions/{revision_id}": {
-   "get": {
-    "summary": "Get Revision",
-    "operationId": "get_revision_api_v1_projects__project_id__revisions__revision_id__get",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "revision_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Revision Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/commands": {
-   "post": {
-    "summary": "Post Commands",
-    "operationId": "post_commands_api_v1_projects__project_id__commands_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "if-match",
-      "in": "header",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "If-Match"
-      }
-     },
-     {
-      "name": "idempotency-key",
-      "in": "header",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Idempotency-Key"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/CommandsBody"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
+    "/api/v1/projects": {
+      "get": {
+        "summary": "List Projects",
+        "operationId": "list_projects_api_v1_projects_get",
+        "parameters": [
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/analyses": {
-   "post": {
-    "summary": "Post Analysis",
-    "operationId": "post_analysis_api_v1_projects__project_id__analyses_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
+      },
+      "post": {
+        "summary": "Create Project",
+        "operationId": "create_project_api_v1_projects_post",
+        "parameters": [
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProject"
+              }
+            }
+          }
         },
-        {
-         "type": "null"
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       ],
-       "title": "Nodesnap Session"
       }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/AnalysisBody"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/coverage": {
-   "get": {
-    "summary": "Coverage",
-    "operationId": "coverage_api_v1_projects__project_id__coverage_get",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "revision_id",
-      "in": "query",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Revision Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
+    "/api/v1/designs": {
+      "post": {
+        "summary": "Create Design",
+        "operationId": "create_design_api_v1_designs_post",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignBody"
+              }
+            }
+          }
         },
-        {
-         "type": "null"
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DesignResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       ],
-       "title": "Nodesnap Session"
       }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/exports": {
-   "post": {
-    "summary": "Post Export",
-    "operationId": "post_export_api_v1_projects__project_id__exports_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ExportBody"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "summary": "Get Project",
+        "operationId": "get_project_api_v1_projects__project_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       }
       }
-     }
-    }
-   }
-  },
-  "/artifacts/{artifact_id}": {
-   "get": {
-    "summary": "Get Artifact",
-    "operationId": "get_artifact_artifacts__artifact_id__get",
-    "parameters": [
-     {
-      "name": "artifact_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Artifact Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/generate": {
-   "post": {
-    "summary": "Post Generate",
-    "operationId": "post_generate_api_v1_projects__project_id__generate_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/GenerateBody"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
+    "/api/v1/projects/{project_id}/revisions": {
+      "get": {
+        "summary": "Revisions",
+        "operationId": "revisions_api_v1_projects__project_id__revisions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       }
       }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/undo": {
-   "post": {
-    "summary": "Post Undo",
-    "description": "Undo = a NEW revision restoring the parent state. History is never rewritten.",
-    "operationId": "post_undo_api_v1_projects__project_id__undo_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{project_id}/conversations": {
-   "post": {
-    "summary": "Conversation",
-    "operationId": "conversation_api_v1_projects__project_id__conversations_post",
-    "parameters": [
-     {
-      "name": "project_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Project Id"
-      }
-     },
-     {
-      "name": "nodesnap_session",
-      "in": "cookie",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Nodesnap Session"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ConversationBody"
-       }
-      }
-     }
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
+    "/api/v1/projects/{project_id}/revisions/{revision_id}": {
+      "get": {
+        "summary": "Revision",
+        "operationId": "revision_api_v1_projects__project_id__revisions__revision_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Revision Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProjectSnapshot_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
-       }
       }
-     }
+    },
+    "/api/v1/projects/{project_id}/commands": {
+      "post": {
+        "summary": "Commands",
+        "operationId": "commands_api_v1_projects__project_id__commands_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/generate": {
+      "post": {
+        "summary": "Generate",
+        "operationId": "generate_api_v1_projects__project_id__generate_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/restore": {
+      "post": {
+        "summary": "Restore",
+        "operationId": "restore_api_v1_projects__project_id__restore_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/undo": {
+      "post": {
+        "summary": "Undo",
+        "operationId": "undo_api_v1_projects__project_id__undo_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/analyses": {
+      "post": {
+        "summary": "Analyses",
+        "operationId": "analyses_api_v1_projects__project_id__analyses_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Previous Analysis",
+        "operationId": "previous_analysis_api_v1_projects__project_id__analyses_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Revision Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/coverage": {
+      "get": {
+        "summary": "Coverage",
+        "operationId": "coverage_api_v1_projects__project_id__coverage_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Revision Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "summary": "Job",
+        "operationId": "job_api_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/events": {
+      "get": {
+        "summary": "Events",
+        "operationId": "events_api_v1_projects__project_id__events_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "last-event-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/exports": {
+      "post": {
+        "summary": "Export",
+        "operationId": "export_api_v1_projects__project_id__exports_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{artifact_id}": {
+      "get": {
+        "summary": "Artifact",
+        "operationId": "artifact_api_v1_artifacts__artifact_id__get",
+        "parameters": [
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Artifact Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/artifacts/{artifact_id}": {
+      "get": {
+        "summary": "Artifact",
+        "operationId": "artifact_artifacts__artifact_id__get",
+        "parameters": [
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Artifact Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/conversations": {
+      "get": {
+        "summary": "Conversations",
+        "operationId": "conversations_api_v1_projects__project_id__conversations_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Conversation",
+        "operationId": "conversation_api_v1_projects__project_id__conversations_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/transcriptions": {
+      "post": {
+        "summary": "Transcription",
+        "operationId": "transcription_api_v1_projects__project_id__transcriptions_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_transcription_api_v1_projects__project_id__transcriptions_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transcriptions": {
+      "post": {
+        "summary": "Brief Transcription",
+        "operationId": "brief_transcription_api_v1_transcriptions_post",
+        "parameters": [
+          {
+            "name": "nodesnap_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Nodesnap Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_brief_transcription_api_v1_transcriptions_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
-   }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisBody": {
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "disciplines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Disciplines"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision_id"
+        ],
+        "title": "AnalysisBody"
+      },
+      "Architecture": {
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "generator_version": {
+            "type": "string",
+            "title": "Generator Version",
+            "default": "orthogonal-architecture-1.0"
+          },
+          "coordinate_basis": {
+            "type": "string",
+            "title": "Coordinate Basis",
+            "default": "local_xy_z_up"
+          },
+          "dimension_basis": {
+            "type": "string",
+            "title": "Dimension Basis",
+            "default": "Exterior faces define the envelope; internal zone edges are wall centerlines. Clear polygons subtract actual wall thickness."
+          },
+          "assemblies": {
+            "items": {
+              "$ref": "#/components/schemas/WallAssembly"
+            },
+            "type": "array",
+            "title": "Assemblies"
+          },
+          "walls": {
+            "items": {
+              "$ref": "#/components/schemas/Wall"
+            },
+            "type": "array",
+            "title": "Walls"
+          },
+          "openings": {
+            "items": {
+              "$ref": "#/components/schemas/Opening"
+            },
+            "type": "array",
+            "title": "Openings"
+          },
+          "slabs": {
+            "items": {
+              "$ref": "#/components/schemas/Slab"
+            },
+            "type": "array",
+            "title": "Slabs"
+          },
+          "stairs": {
+            "items": {
+              "$ref": "#/components/schemas/Stair"
+            },
+            "type": "array",
+            "title": "Stairs"
+          },
+          "space_metrics": {
+            "items": {
+              "$ref": "#/components/schemas/SpaceMetrics"
+            },
+            "type": "array",
+            "title": "Space Metrics"
+          },
+          "issues": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "derived"
+          },
+          "review_status": {
+            "type": "string",
+            "title": "Review Status",
+            "default": "unreviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision_id"
+        ],
+        "title": "Architecture"
+      },
+      "Assumption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "review_status": {
+            "type": "string",
+            "title": "Review Status",
+            "default": "unreviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "rationale"
+        ],
+        "title": "Assumption"
+      },
+      "Body_brief_transcription_api_v1_transcriptions_post": {
+        "properties": {
+          "audio": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Audio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio"
+        ],
+        "title": "Body_brief_transcription_api_v1_transcriptions_post"
+      },
+      "Body_transcription_api_v1_projects__project_id__transcriptions_post": {
+        "properties": {
+          "audio": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Audio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio"
+        ],
+        "title": "Body_transcription_api_v1_projects__project_id__transcriptions_post"
+      },
+      "Brief": {
+        "properties": {
+          "location_status": {
+            "type": "string",
+            "title": "Location Status",
+            "default": "demo_site"
+          },
+          "use": {
+            "type": "string",
+            "title": "Use",
+            "default": "single_family_residence"
+          },
+          "floors_above_ground": {
+            "type": "integer",
+            "title": "Floors Above Ground",
+            "default": 2
+          },
+          "principal_rooms_per_floor": {
+            "type": "integer",
+            "title": "Principal Rooms Per Floor",
+            "default": 6
+          },
+          "target_floor_area_m2": {
+            "type": "number",
+            "title": "Target Floor Area M2",
+            "default": 278.70912000000004
+          },
+          "basement_area_m2": {
+            "type": "number",
+            "title": "Basement Area M2",
+            "default": 278.70912000000004
+          },
+          "roof_terrace_target_m2": {
+            "type": "number",
+            "title": "Roof Terrace Target M2",
+            "default": 83.61273600000001
+          },
+          "materials": {
+            "type": "string",
+            "title": "Materials",
+            "default": "steel primary, timber secondary, reinforced-concrete substructure/pool"
+          },
+          "pool": {
+            "type": "boolean",
+            "title": "Pool",
+            "default": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "title": "Terrace",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "Brief"
+      },
+      "BriefMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "text"
+        ],
+        "title": "BriefMessage"
+      },
+      "BuildingProgram": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "building_use": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Building Use",
+            "default": "single_family_residence"
+          },
+          "footprint_basis": {
+            "type": "string",
+            "enum": [
+              "user_supplied",
+              "demonstration_assumption"
+            ],
+            "title": "Footprint Basis",
+            "default": "demonstration_assumption"
+          },
+          "width_m": {
+            "type": "number",
+            "maximum": 60.0,
+            "minimum": 8.0,
+            "title": "Width M"
+          },
+          "depth_m": {
+            "type": "number",
+            "maximum": 60.0,
+            "minimum": 8.0,
+            "title": "Depth M"
+          },
+          "floors": {
+            "items": {
+              "$ref": "#/components/schemas/FloorProgram"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Floors"
+          },
+          "basement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FloorProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PoolProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "roof_terrace_area_m2": {
+            "type": "number",
+            "maximum": 3000.0,
+            "minimum": 0.0,
+            "title": "Roof Terrace Area M2",
+            "default": 0
+          },
+          "material_palette": {
+            "type": "string",
+            "enum": [
+              "limestone_oak",
+              "warm_concrete",
+              "white_stucco"
+            ],
+            "title": "Material Palette",
+            "default": "limestone_oak"
+          },
+          "design_notes": {
+            "items": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Design Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "width_m",
+          "depth_m",
+          "floors"
+        ],
+        "title": "BuildingProgram"
+      },
+      "CommandsBody": {
+        "properties": {
+          "base_revision_id": {
+            "type": "string",
+            "title": "Base Revision Id"
+          },
+          "commands": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 24,
+            "minItems": 1,
+            "title": "Commands"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_revision_id",
+          "commands"
+        ],
+        "title": "CommandsBody"
+      },
+      "ConversationBody": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "base_revision_id": {
+            "type": "string",
+            "title": "Base Revision Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "base_revision_id"
+        ],
+        "title": "ConversationBody"
+      },
+      "CreateProject": {
+        "properties": {
+          "seed": {
+            "type": "boolean",
+            "title": "Seed",
+            "default": true
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateProject"
+      },
+      "DesignBody": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "brief_history": {
+            "items": {
+              "$ref": "#/components/schemas/BriefMessage"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Brief History"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BuildingProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DesignBody"
+      },
+      "DesignResult": {
+        "properties": {
+          "execution_status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "blocked",
+              "error",
+              "unsupported"
+            ],
+            "title": "Execution Status"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "committed_revision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committed Revision Id"
+          },
+          "revision_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Number"
+          },
+          "committed_revision_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committed Revision Number"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BuildingProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "issue": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue"
+          },
+          "spend_total_est_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spend Total Est Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_status",
+          "explanation"
+        ],
+        "title": "DesignResult"
+      },
+      "Envelope_DesignResult_": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DesignResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "data"
+        ],
+        "title": "Envelope[DesignResult]"
+      },
+      "Envelope_ProjectSnapshot_": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProjectSnapshot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "data"
+        ],
+        "title": "Envelope[ProjectSnapshot]"
+      },
+      "ExportBody": {
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision_id"
+        ],
+        "title": "ExportBody"
+      },
+      "FloorProgram": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "height_m": {
+            "type": "number",
+            "maximum": 4.5,
+            "minimum": 2.6,
+            "title": "Height M",
+            "default": 3.2
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/RoomProgram"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Rooms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "rooms"
+        ],
+        "title": "FloorProgram"
+      },
+      "GenerateBody": {
+        "properties": {
+          "base_revision_id": {
+            "type": "string",
+            "title": "Base Revision Id"
+          },
+          "level": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Level"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/RoomRequest"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Rooms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_revision_id",
+          "level",
+          "rooms"
+        ],
+        "title": "GenerateBody"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InputBasis": {
+        "type": "string",
+        "enum": [
+          "official_dataset",
+          "project_document",
+          "user_supplied",
+          "demonstration_assumption",
+          "derived"
+        ],
+        "title": "InputBasis"
+      },
+      "Level": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "elevation_m": {
+            "type": "number",
+            "title": "Elevation M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "label",
+          "elevation_m"
+        ],
+        "title": "Level"
+      },
+      "Opening": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "wall_id": {
+            "type": "string",
+            "title": "Wall Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "door",
+              "window",
+              "passage"
+            ],
+            "title": "Kind"
+          },
+          "offset_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Offset M"
+          },
+          "width_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Width M"
+          },
+          "height_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height M"
+          },
+          "sill_height_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sill Height M"
+          },
+          "space_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Space Ids"
+          },
+          "hinge": {
+            "type": "string",
+            "enum": [
+              "start",
+              "end"
+            ],
+            "title": "Hinge",
+            "default": "start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "wall_id",
+          "kind",
+          "offset_m",
+          "width_m",
+          "height_m",
+          "sill_height_m",
+          "space_ids"
+        ],
+        "title": "Opening"
+      },
+      "PoolProgram": {
+        "properties": {
+          "water_length_m": {
+            "type": "number",
+            "maximum": 40.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Water Length M"
+          },
+          "water_width_m": {
+            "type": "number",
+            "maximum": 25.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Water Width M"
+          },
+          "water_depth_m": {
+            "type": "number",
+            "maximum": 5.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Water Depth M",
+            "default": 1.4
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "basement",
+              "ground"
+            ],
+            "title": "Level",
+            "default": "basement"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "water_length_m",
+          "water_width_m"
+        ],
+        "title": "PoolProgram"
+      },
+      "PoolSystem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "level_id": {
+            "type": "string",
+            "title": "Level Id"
+          },
+          "water_length_m": {
+            "type": "number",
+            "title": "Water Length M",
+            "default": 8.0
+          },
+          "water_width_m": {
+            "type": "number",
+            "title": "Water Width M",
+            "default": 3.5
+          },
+          "water_depth_m": {
+            "type": "number",
+            "title": "Water Depth M",
+            "default": 1.4
+          },
+          "origin_x_m": {
+            "type": "number",
+            "title": "Origin X M",
+            "default": 2.0
+          },
+          "origin_y_m": {
+            "type": "number",
+            "title": "Origin Y M",
+            "default": 2.0
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level_id"
+        ],
+        "title": "PoolSystem"
+      },
+      "ProjectSnapshot": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "0.2.0"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "parent_revision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Revision Id"
+          },
+          "revision_number": {
+            "type": "integer",
+            "title": "Revision Number",
+            "default": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": "NodeSnap Villa \u2014 NYC demonstration"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction",
+            "default": "NYC"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/Brief"
+          },
+          "site": {
+            "$ref": "#/components/schemas/SiteContext"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/Level"
+            },
+            "type": "array",
+            "title": "Levels",
+            "default": []
+          },
+          "spaces": {
+            "items": {
+              "$ref": "#/components/schemas/Space"
+            },
+            "type": "array",
+            "title": "Spaces",
+            "default": []
+          },
+          "pool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PoolSystem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "roof_terrace_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roof Terrace Area M2"
+          },
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/Assumption"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "default": []
+          },
+          "architecture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Architecture"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material_palette": {
+            "type": "string",
+            "enum": [
+              "limestone_oak",
+              "warm_concrete",
+              "white_stucco"
+            ],
+            "title": "Material Palette",
+            "default": "limestone_oak"
+          },
+          "building_program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BuildingProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "envelope_polygon": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Envelope Polygon"
+          },
+          "content_hash": {
+            "type": "string",
+            "title": "Content Hash",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "ProjectSnapshot"
+      },
+      "RestoreBody": {
+        "properties": {
+          "base_revision_id": {
+            "type": "string",
+            "title": "Base Revision Id"
+          },
+          "target_revision_id": {
+            "type": "string",
+            "title": "Target Revision Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_revision_id",
+          "target_revision_id"
+        ],
+        "title": "RestoreBody"
+      },
+      "RoomProgram": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "use": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Use"
+          },
+          "target_area_m2": {
+            "type": "number",
+            "maximum": 3000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Target Area M2"
+          },
+          "area_basis": {
+            "type": "string",
+            "enum": [
+              "user_supplied",
+              "demonstration_assumption"
+            ],
+            "title": "Area Basis",
+            "default": "demonstration_assumption"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "default": 1
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "principal",
+              "support"
+            ],
+            "title": "Classification",
+            "default": "principal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "use",
+          "target_area_m2"
+        ],
+        "title": "RoomProgram"
+      },
+      "RoomRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "use": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Use"
+          },
+          "target_area_m2": {
+            "type": "number",
+            "maximum": 1000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Target Area M2"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "use",
+          "target_area_m2"
+        ],
+        "title": "RoomRequest"
+      },
+      "SiteContext": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "default": "synthetic_demo"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": "Demo Villa NYC-01"
+          },
+          "real_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Real Address"
+          },
+          "bbl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbl"
+          },
+          "context_width_m": {
+            "type": "number",
+            "title": "Context Width M",
+            "default": 30.0
+          },
+          "context_depth_m": {
+            "type": "number",
+            "title": "Context Depth M",
+            "default": 45.0
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          }
+        },
+        "type": "object",
+        "title": "SiteContext"
+      },
+      "Slab": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "level_id": {
+            "type": "string",
+            "title": "Level Id"
+          },
+          "elevation_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevation M"
+          },
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon"
+          },
+          "holes": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Holes"
+          },
+          "thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Thickness M"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "floor",
+              "roof"
+            ],
+            "title": "Kind"
+          },
+          "material": {
+            "type": "string",
+            "title": "Material",
+            "default": "concrete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "level_id",
+          "polygon",
+          "thickness_m",
+          "kind"
+        ],
+        "title": "Slab"
+      },
+      "Space": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "level_id": {
+            "type": "string",
+            "title": "Level Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "use": {
+            "type": "string",
+            "title": "Use"
+          },
+          "classification": {
+            "type": "string",
+            "title": "Classification"
+          },
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon"
+          },
+          "target_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Area M2"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level_id",
+          "name",
+          "use",
+          "classification",
+          "polygon"
+        ],
+        "title": "Space"
+      },
+      "SpaceMetrics": {
+        "properties": {
+          "space_id": {
+            "type": "string",
+            "title": "Space Id"
+          },
+          "clear_polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Clear Polygon"
+          },
+          "zone_area_m2": {
+            "type": "number",
+            "title": "Zone Area M2"
+          },
+          "net_area_m2": {
+            "type": "number",
+            "title": "Net Area M2"
+          },
+          "clear_width_m": {
+            "type": "number",
+            "title": "Clear Width M"
+          },
+          "clear_depth_m": {
+            "type": "number",
+            "title": "Clear Depth M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "space_id",
+          "clear_polygon",
+          "zone_area_m2",
+          "net_area_m2",
+          "clear_width_m",
+          "clear_depth_m"
+        ],
+        "title": "SpaceMetrics"
+      },
+      "Stair": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "lower_level_id": {
+            "type": "string",
+            "title": "Lower Level Id"
+          },
+          "upper_level_id": {
+            "type": "string",
+            "title": "Upper Level Id"
+          },
+          "lower_space_id": {
+            "type": "string",
+            "title": "Lower Space Id"
+          },
+          "upper_space_id": {
+            "type": "string",
+            "title": "Upper Space Id"
+          },
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon"
+          },
+          "width_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Width M"
+          },
+          "riser_count": {
+            "type": "integer",
+            "minimum": 2.0,
+            "title": "Riser Count"
+          },
+          "riser_height_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Riser Height M"
+          },
+          "tread_depth_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Tread Depth M"
+          },
+          "flight_run_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Flight Run M"
+          },
+          "landing_depth_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Landing Depth M"
+          },
+          "orientation": {
+            "type": "string",
+            "enum": [
+              "north",
+              "south"
+            ],
+            "title": "Orientation",
+            "default": "south"
+          },
+          "form": {
+            "type": "string",
+            "const": "dogleg",
+            "title": "Form",
+            "default": "dogleg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "lower_level_id",
+          "upper_level_id",
+          "lower_space_id",
+          "upper_space_id",
+          "polygon",
+          "width_m",
+          "riser_count",
+          "riser_height_m",
+          "tread_depth_m",
+          "flight_run_m",
+          "landing_depth_m"
+        ],
+        "title": "Stair"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Wall": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "level_id": {
+            "type": "string",
+            "title": "Level Id"
+          },
+          "start": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Start"
+          },
+          "end": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "End"
+          },
+          "thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Thickness M"
+          },
+          "height_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height M"
+          },
+          "exterior": {
+            "type": "boolean",
+            "title": "Exterior"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "enclosure",
+              "partition",
+              "guard"
+            ],
+            "title": "Role"
+          },
+          "material": {
+            "type": "string",
+            "enum": [
+              "stone",
+              "plaster",
+              "concrete",
+              "glass"
+            ],
+            "title": "Material"
+          },
+          "assembly_id": {
+            "type": "string",
+            "title": "Assembly Id"
+          },
+          "space_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Space Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "level_id",
+          "start",
+          "end",
+          "thickness_m",
+          "height_m",
+          "exterior",
+          "role",
+          "material",
+          "assembly_id",
+          "space_ids"
+        ],
+        "title": "Wall"
+      },
+      "WallAssembly": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Thickness M"
+          },
+          "material": {
+            "type": "string",
+            "enum": [
+              "stone",
+              "plaster",
+              "concrete",
+              "glass"
+            ],
+            "title": "Material"
+          },
+          "structural_role": {
+            "type": "string",
+            "title": "Structural Role",
+            "default": "not_determined"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "thickness_m",
+          "material"
+        ],
+        "title": "WallAssembly"
+      }
+    }
   }
- },
- "components": {
-  "schemas": {
-   "AnalysisBody": {
-    "properties": {
-     "revision_id": {
-      "type": "string",
-      "title": "Revision Id"
-     },
-     "disciplines": {
-      "items": {
-       "type": "string"
-      },
-      "type": "array",
-      "title": "Disciplines",
-      "default": [
-       "pool",
-       "architecture"
-      ]
-     }
-    },
-    "type": "object",
-    "required": [
-     "revision_id"
-    ],
-    "title": "AnalysisBody"
-   },
-   "CommandsBody": {
-    "properties": {
-     "base_revision_id": {
-      "type": "string",
-      "title": "Base Revision Id"
-     },
-     "commands": {
-      "items": {
-       "additionalProperties": true,
-       "type": "object"
-      },
-      "type": "array",
-      "title": "Commands"
-     }
-    },
-    "type": "object",
-    "required": [
-     "base_revision_id",
-     "commands"
-    ],
-    "title": "CommandsBody"
-   },
-   "ConversationBody": {
-    "properties": {
-     "text": {
-      "type": "string",
-      "title": "Text"
-     },
-     "base_revision_id": {
-      "type": "string",
-      "title": "Base Revision Id"
-     }
-    },
-    "type": "object",
-    "required": [
-     "text",
-     "base_revision_id"
-    ],
-    "title": "ConversationBody"
-   },
-   "CreateProject": {
-    "properties": {
-     "seed": {
-      "type": "boolean",
-      "title": "Seed",
-      "default": true
-     }
-    },
-    "type": "object",
-    "title": "CreateProject"
-   },
-   "ExportBody": {
-    "properties": {
-     "revision_id": {
-      "type": "string",
-      "title": "Revision Id"
-     }
-    },
-    "type": "object",
-    "required": [
-     "revision_id"
-    ],
-    "title": "ExportBody"
-   },
-   "GenerateBody": {
-    "properties": {
-     "base_revision_id": {
-      "type": "string",
-      "title": "Base Revision Id"
-     },
-     "level": {
-      "type": "string",
-      "title": "Level"
-     },
-     "rooms": {
-      "items": {
-       "additionalProperties": true,
-       "type": "object"
-      },
-      "type": "array",
-      "title": "Rooms"
-     }
-    },
-    "type": "object",
-    "required": [
-     "base_revision_id",
-     "level",
-     "rooms"
-    ],
-    "title": "GenerateBody"
-   },
-   "HTTPValidationError": {
-    "properties": {
-     "detail": {
-      "items": {
-       "$ref": "#/components/schemas/ValidationError"
-      },
-      "type": "array",
-      "title": "Detail"
-     }
-    },
-    "type": "object",
-    "title": "HTTPValidationError"
-   },
-   "ValidationError": {
-    "properties": {
-     "loc": {
-      "items": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "integer"
-        }
-       ]
-      },
-      "type": "array",
-      "title": "Location"
-     },
-     "msg": {
-      "type": "string",
-      "title": "Message"
-     },
-     "type": {
-      "type": "string",
-      "title": "Error Type"
-     },
-     "input": {
-      "title": "Input"
-     },
-     "ctx": {
-      "type": "object",
-      "title": "Context"
-     }
-    },
-    "type": "object",
-    "required": [
-     "loc",
-     "msg",
-     "type"
-    ],
-    "title": "ValidationError"
-   }
-  }
- }
 }

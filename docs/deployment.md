@@ -39,3 +39,31 @@ cd apps/web && pnpm install && pnpm build && pnpm start --port 3000
 - Artifacts: volume `artifacts:/data/artifacts` (or `./artifacts` locally); each artifact is
   content-hashed in its export manifest.
 - No secrets in the repository: `.env` is gitignored; only `.env.example` is committed.
+
+## 2026-10-31 rewrite compatibility
+
+The rewrite preserves the existing Linode host, hostname configuration, Caddy routing,
+service names, ports, Dockerfiles, Compose topology, volume names and build-time
+`NODESNAP_API` proxy configuration. No production deploy, DNS/billing change or
+remote migration was performed as part of the local rewrite verification.
+
+API startup uses SQLAlchemy `metadata.create_all` to add the new mutation receipts,
+command receipts, project events, artifact records, conversations, conversation leases
+and application budget tables. Existing actor/project/revision/job/analysis/usage
+columns are unchanged. Initial budget state imports the existing recorded spend.
+This is an additive compatibility path, not a versioned Alembic migration system.
+Back up the database and artifacts before a production upgrade; the code's SQLite
+compatibility tests are not a production PostgreSQL upgrade rehearsal.
+
+Stored 0.1 snapshots are loaded without rewriting their bytes or historical hashes.
+New revisions use schema 0.2 and contain revision-bound architectural geometry.
+Legacy revisions without architecture remain identified as such; use the current
+supported template for the full architectural experience. Historical artifacts remain
+immutable and must not be overwritten by a new export.
+
+On macOS development, use a writable local artifact directory such as
+`ARTIFACT_ROOT=./artifacts`; `/data/artifacts` is the existing container mount. Keep
+runtime provider credentials in the ignored local environment file and supply them
+to the API process. Provider calls remain server-side and Meta-only.
+
+Build contexts now exclude host dependency directories, Next build output and local secrets using root/web `.dockerignore` files. This prevents a build from a populated Mac checkout replacing Linux dependencies with host files; the Dockerfiles and Compose topology are unchanged.

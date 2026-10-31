@@ -45,10 +45,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Projects */
+        get: operations["list_projects_api_v1_projects_get"];
         put?: never;
         /** Create Project */
         post: operations["create_project_api_v1_projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/designs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Design */
+        post: operations["create_design_api_v1_designs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -72,6 +90,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisions */
+        get: operations["revisions_api_v1_projects__project_id__revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/revisions/{revision_id}": {
         parameters: {
             query?: never;
@@ -79,8 +114,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Revision */
-        get: operations["get_revision_api_v1_projects__project_id__revisions__revision_id__get"];
+        /** Revision */
+        get: operations["revision_api_v1_projects__project_id__revisions__revision_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -98,8 +133,59 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Post Commands */
-        post: operations["post_commands_api_v1_projects__project_id__commands_post"];
+        /** Commands */
+        post: operations["commands_api_v1_projects__project_id__commands_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate */
+        post: operations["generate_api_v1_projects__project_id__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore */
+        post: operations["restore_api_v1_projects__project_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo */
+        post: operations["undo_api_v1_projects__project_id__undo_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -113,10 +199,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Previous Analysis */
+        get: operations["previous_analysis_api_v1_projects__project_id__analyses_get"];
         put?: never;
-        /** Post Analysis */
-        post: operations["post_analysis_api_v1_projects__project_id__analyses_post"];
+        /** Analyses */
+        post: operations["analyses_api_v1_projects__project_id__analyses_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -140,6 +227,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Job */
+        get: operations["job_api_v1_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events */
+        get: operations["events_api_v1_projects__project_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/exports": {
         parameters: {
             query?: never;
@@ -149,8 +270,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Post Export */
-        post: operations["post_export_api_v1_projects__project_id__exports_post"];
+        /** Export */
+        post: operations["export_api_v1_projects__project_id__exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/artifacts/{artifact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Artifact */
+        get: operations["artifact_api_v1_artifacts__artifact_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -164,47 +302,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Artifact */
-        get: operations["get_artifact_artifacts__artifact_id__get"];
+        /** Artifact */
+        get: operations["artifact_artifacts__artifact_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{project_id}/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Post Generate */
-        post: operations["post_generate_api_v1_projects__project_id__generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{project_id}/undo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Post Undo
-         * @description Undo = a NEW revision restoring the parent state. History is never rewritten.
-         */
-        post: operations["post_undo_api_v1_projects__project_id__undo_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -218,10 +319,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Conversations */
+        get: operations["conversations_api_v1_projects__project_id__conversations_get"];
         put?: never;
         /** Conversation */
         post: operations["conversation_api_v1_projects__project_id__conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transcription */
+        post: operations["transcription_api_v1_projects__project_id__transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Brief Transcription */
+        post: operations["brief_transcription_api_v1_transcriptions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -236,14 +372,179 @@ export interface components {
         AnalysisBody: {
             /** Revision Id */
             revision_id: string;
+            /** Disciplines */
+            disciplines?: string[];
+        };
+        /** Architecture */
+        Architecture: {
+            /** Revision Id */
+            revision_id: string;
             /**
-             * Disciplines
-             * @default [
-             *       "pool",
-             *       "architecture"
-             *     ]
+             * Generator Version
+             * @default orthogonal-architecture-1.0
              */
-            disciplines: string[];
+            generator_version: string;
+            /**
+             * Coordinate Basis
+             * @default local_xy_z_up
+             */
+            coordinate_basis: string;
+            /**
+             * Dimension Basis
+             * @default Exterior faces define the envelope; internal zone edges are wall centerlines. Clear polygons subtract actual wall thickness.
+             */
+            dimension_basis: string;
+            /** Assemblies */
+            assemblies?: components["schemas"]["WallAssembly"][];
+            /** Walls */
+            walls?: components["schemas"]["Wall"][];
+            /** Openings */
+            openings?: components["schemas"]["Opening"][];
+            /** Slabs */
+            slabs?: components["schemas"]["Slab"][];
+            /** Stairs */
+            stairs?: components["schemas"]["Stair"][];
+            /** Space Metrics */
+            space_metrics?: components["schemas"]["SpaceMetrics"][];
+            /** Issues */
+            issues?: {
+                [key: string]: unknown;
+            }[];
+            /** @default derived */
+            input_basis: components["schemas"]["InputBasis"];
+            /**
+             * Review Status
+             * @default unreviewed
+             */
+            review_status: string;
+        };
+        /** Assumption */
+        Assumption: {
+            /** Id */
+            id?: string;
+            /** Field */
+            field: string;
+            /** Value */
+            value: unknown;
+            /** Rationale */
+            rationale: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /**
+             * Review Status
+             * @default unreviewed
+             */
+            review_status: string;
+        };
+        /** Body_brief_transcription_api_v1_transcriptions_post */
+        Body_brief_transcription_api_v1_transcriptions_post: {
+            /** Audio */
+            audio: string;
+        };
+        /** Body_transcription_api_v1_projects__project_id__transcriptions_post */
+        Body_transcription_api_v1_projects__project_id__transcriptions_post: {
+            /** Audio */
+            audio: string;
+        };
+        /** Brief */
+        Brief: {
+            /**
+             * Location Status
+             * @default demo_site
+             */
+            location_status: string;
+            /**
+             * Use
+             * @default single_family_residence
+             */
+            use: string;
+            /**
+             * Floors Above Ground
+             * @default 2
+             */
+            floors_above_ground: number;
+            /**
+             * Principal Rooms Per Floor
+             * @default 6
+             */
+            principal_rooms_per_floor: number;
+            /**
+             * Target Floor Area M2
+             * @default 278.70912000000004
+             */
+            target_floor_area_m2: number;
+            /**
+             * Basement Area M2
+             * @default 278.70912000000004
+             */
+            basement_area_m2: number;
+            /**
+             * Roof Terrace Target M2
+             * @default 83.61273600000001
+             */
+            roof_terrace_target_m2: number;
+            /**
+             * Materials
+             * @default steel primary, timber secondary, reinforced-concrete substructure/pool
+             */
+            materials: string;
+            /**
+             * Pool
+             * @default true
+             */
+            pool: boolean;
+            /**
+             * Terrace
+             * @default true
+             */
+            terrace: boolean;
+        };
+        /** BriefMessage */
+        BriefMessage: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+        };
+        /** BuildingProgram */
+        BuildingProgram: {
+            /** Title */
+            title: string;
+            /**
+             * Building Use
+             * @default single_family_residence
+             */
+            building_use: string;
+            /**
+             * Footprint Basis
+             * @default demonstration_assumption
+             * @enum {string}
+             */
+            footprint_basis: "user_supplied" | "demonstration_assumption";
+            /** Width M */
+            width_m: number;
+            /** Depth M */
+            depth_m: number;
+            /** Floors */
+            floors: components["schemas"]["FloorProgram"][];
+            basement?: components["schemas"]["FloorProgram"] | null;
+            pool?: components["schemas"]["PoolProgram"] | null;
+            /**
+             * Roof Terrace Area M2
+             * @default 0
+             */
+            roof_terrace_area_m2: number;
+            /**
+             * Material Palette
+             * @default limestone_oak
+             * @enum {string}
+             */
+            material_palette: "limestone_oak" | "warm_concrete" | "white_stucco";
+            /** Design Notes */
+            design_notes?: string[];
         };
         /** CommandsBody */
         CommandsBody: {
@@ -268,11 +569,76 @@ export interface components {
              * @default true
              */
             seed: boolean;
+            /** Title */
+            title?: string | null;
+        };
+        /** DesignBody */
+        DesignBody: {
+            /** Text */
+            text?: string | null;
+            /** Brief History */
+            brief_history?: components["schemas"]["BriefMessage"][];
+            program?: components["schemas"]["BuildingProgram"] | null;
+        };
+        /** DesignResult */
+        DesignResult: {
+            /**
+             * Execution Status
+             * @enum {string}
+             */
+            execution_status: "completed" | "blocked" | "error" | "unsupported";
+            /** Explanation */
+            explanation: string;
+            /** Project Id */
+            project_id?: string | null;
+            /** Committed Revision Id */
+            committed_revision_id?: string | null;
+            /** Revision Number */
+            revision_number?: number | null;
+            /** Committed Revision Number */
+            committed_revision_number?: number | null;
+            /** Content Hash */
+            content_hash?: string | null;
+            /** Title */
+            title?: string | null;
+            program?: components["schemas"]["BuildingProgram"] | null;
+            /** Assumptions */
+            assumptions?: string[];
+            /** Issue */
+            issue?: {
+                [key: string]: unknown;
+            } | null;
+            /** Spend Total Est Usd */
+            spend_total_est_usd?: number | null;
+        };
+        /** Envelope[DesignResult] */
+        Envelope_DesignResult_: {
+            /** Request Id */
+            request_id: string;
+            data: components["schemas"]["DesignResult"];
+        };
+        /** Envelope[ProjectSnapshot] */
+        Envelope_ProjectSnapshot_: {
+            /** Request Id */
+            request_id: string;
+            data: components["schemas"]["ProjectSnapshot"];
         };
         /** ExportBody */
         ExportBody: {
             /** Revision Id */
             revision_id: string;
+        };
+        /** FloorProgram */
+        FloorProgram: {
+            /** Label */
+            label: string;
+            /**
+             * Height M
+             * @default 3.2
+             */
+            height_m: number;
+            /** Rooms */
+            rooms: components["schemas"]["RoomProgram"][];
         };
         /** GenerateBody */
         GenerateBody: {
@@ -281,14 +647,350 @@ export interface components {
             /** Level */
             level: string;
             /** Rooms */
-            rooms: {
-                [key: string]: unknown;
-            }[];
+            rooms: components["schemas"]["RoomRequest"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * InputBasis
+         * @enum {string}
+         */
+        InputBasis: "official_dataset" | "project_document" | "user_supplied" | "demonstration_assumption" | "derived";
+        /** Level */
+        Level: {
+            /** Id */
+            id?: string;
+            /** Name */
+            name: string;
+            /** Label */
+            label: string;
+            /** Elevation M */
+            elevation_m: number;
+        };
+        /** Opening */
+        Opening: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Wall Id */
+            wall_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "door" | "window" | "passage";
+            /** Offset M */
+            offset_m: number;
+            /** Width M */
+            width_m: number;
+            /** Height M */
+            height_m: number;
+            /** Sill Height M */
+            sill_height_m: number;
+            /** Space Ids */
+            space_ids: string[];
+            /**
+             * Hinge
+             * @default start
+             * @enum {string}
+             */
+            hinge: "start" | "end";
+        };
+        /** PoolProgram */
+        PoolProgram: {
+            /** Water Length M */
+            water_length_m: number;
+            /** Water Width M */
+            water_width_m: number;
+            /**
+             * Water Depth M
+             * @default 1.4
+             */
+            water_depth_m: number;
+            /**
+             * Level
+             * @default basement
+             * @enum {string}
+             */
+            level: "basement" | "ground";
+        };
+        /** PoolSystem */
+        PoolSystem: {
+            /** Id */
+            id?: string;
+            /** Level Id */
+            level_id: string;
+            /**
+             * Water Length M
+             * @default 8
+             */
+            water_length_m: number;
+            /**
+             * Water Width M
+             * @default 3.5
+             */
+            water_width_m: number;
+            /**
+             * Water Depth M
+             * @default 1.4
+             */
+            water_depth_m: number;
+            /**
+             * Origin X M
+             * @default 2
+             */
+            origin_x_m: number;
+            /**
+             * Origin Y M
+             * @default 2
+             */
+            origin_y_m: number;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+        };
+        /** ProjectSnapshot */
+        ProjectSnapshot: {
+            /**
+             * Schema Version
+             * @default 0.2.0
+             */
+            schema_version: string;
+            /** Project Id */
+            project_id: string;
+            /** Revision Id */
+            revision_id?: string;
+            /** Parent Revision Id */
+            parent_revision_id?: string | null;
+            /**
+             * Revision Number
+             * @default 1
+             */
+            revision_number: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Title
+             * @default NodeSnap Villa — NYC demonstration
+             */
+            title: string;
+            /**
+             * Jurisdiction
+             * @default NYC
+             */
+            jurisdiction: string;
+            brief?: components["schemas"]["Brief"];
+            site?: components["schemas"]["SiteContext"];
+            /**
+             * Levels
+             * @default []
+             */
+            levels: components["schemas"]["Level"][];
+            /**
+             * Spaces
+             * @default []
+             */
+            spaces: components["schemas"]["Space"][];
+            pool?: components["schemas"]["PoolSystem"] | null;
+            /** Roof Terrace Area M2 */
+            roof_terrace_area_m2?: number | null;
+            /**
+             * Assumptions
+             * @default []
+             */
+            assumptions: components["schemas"]["Assumption"][];
+            architecture?: components["schemas"]["Architecture"] | null;
+            /**
+             * Material Palette
+             * @default limestone_oak
+             * @enum {string}
+             */
+            material_palette: "limestone_oak" | "warm_concrete" | "white_stucco";
+            building_program?: components["schemas"]["BuildingProgram"] | null;
+            /** Envelope Polygon */
+            envelope_polygon?: number[][] | null;
+            /**
+             * Content Hash
+             * @default
+             */
+            content_hash: string;
+        };
+        /** RestoreBody */
+        RestoreBody: {
+            /** Base Revision Id */
+            base_revision_id: string;
+            /** Target Revision Id */
+            target_revision_id: string;
+        };
+        /** RoomProgram */
+        RoomProgram: {
+            /** Name */
+            name: string;
+            /** Use */
+            use: string;
+            /** Target Area M2 */
+            target_area_m2: number;
+            /**
+             * Area Basis
+             * @default demonstration_assumption
+             * @enum {string}
+             */
+            area_basis: "user_supplied" | "demonstration_assumption";
+            /**
+             * Count
+             * @default 1
+             */
+            count: number;
+            /**
+             * Classification
+             * @default principal
+             * @enum {string}
+             */
+            classification: "principal" | "support";
+        };
+        /** RoomRequest */
+        RoomRequest: {
+            /** Name */
+            name: string;
+            /** Use */
+            use: string;
+            /** Target Area M2 */
+            target_area_m2: number;
+        };
+        /** SiteContext */
+        SiteContext: {
+            /**
+             * Mode
+             * @default synthetic_demo
+             */
+            mode: string;
+            /**
+             * Name
+             * @default Demo Villa NYC-01
+             */
+            name: string;
+            /** Real Address */
+            real_address?: string | null;
+            /** Bbl */
+            bbl?: string | null;
+            /**
+             * Context Width M
+             * @default 30
+             */
+            context_width_m: number;
+            /**
+             * Context Depth M
+             * @default 45
+             */
+            context_depth_m: number;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+        };
+        /** Slab */
+        Slab: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Level Id */
+            level_id: string;
+            /** Elevation M */
+            elevation_m?: number | null;
+            /** Polygon */
+            polygon: number[][];
+            /** Holes */
+            holes?: number[][][];
+            /** Thickness M */
+            thickness_m: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "floor" | "roof";
+            /**
+             * Material
+             * @default concrete
+             */
+            material: string;
+        };
+        /** Space */
+        Space: {
+            /** Id */
+            id?: string;
+            /** Level Id */
+            level_id: string;
+            /** Name */
+            name: string;
+            /** Use */
+            use: string;
+            /** Classification */
+            classification: string;
+            /** Polygon */
+            polygon: number[][];
+            /** Target Area M2 */
+            target_area_m2?: number | null;
+        };
+        /** SpaceMetrics */
+        SpaceMetrics: {
+            /** Space Id */
+            space_id: string;
+            /** Clear Polygon */
+            clear_polygon: number[][];
+            /** Zone Area M2 */
+            zone_area_m2: number;
+            /** Net Area M2 */
+            net_area_m2: number;
+            /** Clear Width M */
+            clear_width_m: number;
+            /** Clear Depth M */
+            clear_depth_m: number;
+        };
+        /** Stair */
+        Stair: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Lower Level Id */
+            lower_level_id: string;
+            /** Upper Level Id */
+            upper_level_id: string;
+            /** Lower Space Id */
+            lower_space_id: string;
+            /** Upper Space Id */
+            upper_space_id: string;
+            /** Polygon */
+            polygon: number[][];
+            /** Width M */
+            width_m: number;
+            /** Riser Count */
+            riser_count: number;
+            /** Riser Height M */
+            riser_height_m: number;
+            /** Tread Depth M */
+            tread_depth_m: number;
+            /** Flight Run M */
+            flight_run_m: number;
+            /** Landing Depth M */
+            landing_depth_m: number;
+            /**
+             * Orientation
+             * @default south
+             * @enum {string}
+             */
+            orientation: "north" | "south";
+            /**
+             * Form
+             * @default dogleg
+             * @constant
+             */
+            form: "dogleg";
         };
         /** ValidationError */
         ValidationError: {
@@ -302,6 +1004,60 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** Wall */
+        Wall: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Level Id */
+            level_id: string;
+            /** Start */
+            start: number[];
+            /** End */
+            end: number[];
+            /** Thickness M */
+            thickness_m: number;
+            /** Height M */
+            height_m: number;
+            /** Exterior */
+            exterior: boolean;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "enclosure" | "partition" | "guard";
+            /**
+             * Material
+             * @enum {string}
+             */
+            material: "stone" | "plaster" | "concrete" | "glass";
+            /** Assembly Id */
+            assembly_id: string;
+            /** Space Ids */
+            space_ids: string[];
+        };
+        /** WallAssembly */
+        WallAssembly: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Name */
+            name: string;
+            /** Thickness M */
+            thickness_m: number;
+            /**
+             * Material
+             * @enum {string}
+             */
+            material: "stone" | "plaster" | "concrete" | "glass";
+            /**
+             * Structural Role
+             * @default not_determined
+             */
+            structural_role: string;
         };
     };
     responses: never;
@@ -337,7 +1093,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -348,6 +1106,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_projects_api_v1_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -374,6 +1172,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_design_api_v1_designs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "idempotency-key"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_DesignResult_"];
                 };
             };
             /** @description Validation Error */
@@ -420,13 +1255,12 @@ export interface operations {
             };
         };
     };
-    get_revision_api_v1_projects__project_id__revisions__revision_id__get: {
+    revisions_api_v1_projects__project_id__revisions_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 project_id: string;
-                revision_id: string;
             };
             cookie?: {
                 nodesnap_session?: string | null;
@@ -454,7 +1288,41 @@ export interface operations {
             };
         };
     };
-    post_commands_api_v1_projects__project_id__commands_post: {
+    revision_api_v1_projects__project_id__revisions__revision_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                revision_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ProjectSnapshot_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commands_api_v1_projects__project_id__commands_post: {
         parameters: {
             query?: never;
             header?: {
@@ -494,7 +1362,155 @@ export interface operations {
             };
         };
     };
-    post_analysis_api_v1_projects__project_id__analyses_post: {
+    generate_api_v1_projects__project_id__generate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "if-match"?: string | null;
+                "idempotency-key"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_api_v1_projects__project_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "if-match"?: string | null;
+                "idempotency-key"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_api_v1_projects__project_id__undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previous_analysis_api_v1_projects__project_id__analyses_get: {
+        parameters: {
+            query: {
+                revision_id: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyses_api_v1_projects__project_id__analyses_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -566,7 +1582,75 @@ export interface operations {
             };
         };
     };
-    post_export_api_v1_projects__project_id__exports_post: {
+    job_api_v1_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_api_v1_projects__project_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "last-event-id"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_api_v1_projects__project_id__exports_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -603,7 +1687,7 @@ export interface operations {
             };
         };
     };
-    get_artifact_artifacts__artifact_id__get: {
+    artifact_api_v1_artifacts__artifact_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -636,22 +1720,18 @@ export interface operations {
             };
         };
     };
-    post_generate_api_v1_projects__project_id__generate_post: {
+    artifact_artifacts__artifact_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                project_id: string;
+                artifact_id: string;
             };
             cookie?: {
                 nodesnap_session?: string | null;
             };
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateBody"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -673,7 +1753,7 @@ export interface operations {
             };
         };
     };
-    post_undo_api_v1_projects__project_id__undo_post: {
+    conversations_api_v1_projects__project_id__conversations_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -709,7 +1789,10 @@ export interface operations {
     conversation_api_v1_projects__project_id__conversations_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "if-match"?: string | null;
+                "idempotency-key"?: string | null;
+            };
             path: {
                 project_id: string;
             };
@@ -720,6 +1803,78 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConversationBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcription_api_v1_projects__project_id__transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_transcription_api_v1_projects__project_id__transcriptions_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    brief_transcription_api_v1_transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                nodesnap_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_brief_transcription_api_v1_transcriptions_post"];
             };
         };
         responses: {

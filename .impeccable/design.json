@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T18:57:40.548045+00:00",
+  "title": "Design System: NodeSnap architectural studio",
+  "extensions": {
+    "colorMeta": {
+      "charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal Frame",
+        "canonical": "#202923",
+        "tonalRamp": [
+          "oklch(15.00% 0.01678 155.93)",
+          "oklch(26.43% 0.01678 155.93)",
+          "oklch(37.86% 0.01678 155.93)",
+          "oklch(49.29% 0.01678 155.93)",
+          "oklch(60.71% 0.01678 155.93)",
+          "oklch(72.14% 0.01678 155.93)",
+          "oklch(83.57% 0.01678 155.93)",
+          "oklch(95.00% 0.01678 155.93)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Mineral Table",
+        "canonical": "#e9e9e1",
+        "tonalRamp": [
+          "oklch(15.00% 0.01067 106.60)",
+          "oklch(26.43% 0.01067 106.60)",
+          "oklch(37.86% 0.01067 106.60)",
+          "oklch(49.29% 0.01067 106.60)",
+          "oklch(60.71% 0.01067 106.60)",
+          "oklch(72.14% 0.01067 106.60)",
+          "oklch(83.57% 0.01067 106.60)",
+          "oklch(95.00% 0.01067 106.60)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#fcfcf8",
+        "tonalRamp": [
+          "oklch(15.00% 0.00526 106.50)",
+          "oklch(26.43% 0.00526 106.50)",
+          "oklch(37.86% 0.00526 106.50)",
+          "oklch(49.29% 0.00526 106.50)",
+          "oklch(60.71% 0.00526 106.50)",
+          "oklch(72.14% 0.00526 106.50)",
+          "oklch(83.57% 0.00526 106.50)",
+          "oklch(95.00% 0.00526 106.50)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Warm Panel",
+        "canonical": "#f6f6f0",
+        "tonalRamp": [
+          "oklch(15.00% 0.00793 106.55)",
+          "oklch(26.43% 0.00793 106.55)",
+          "oklch(37.86% 0.00793 106.55)",
+          "oklch(49.29% 0.00793 106.55)",
+          "oklch(60.71% 0.00793 106.55)",
+          "oklch(72.14% 0.00793 106.55)",
+          "oklch(83.57% 0.00793 106.55)",
+          "oklch(95.00% 0.00793 106.55)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink",
+        "canonical": "#24332d",
+        "tonalRamp": [
+          "oklch(15.00% 0.02272 168.28)",
+          "oklch(26.43% 0.02272 168.28)",
+          "oklch(37.86% 0.02272 168.28)",
+          "oklch(49.29% 0.02272 168.28)",
+          "oklch(60.71% 0.02272 168.28)",
+          "oklch(72.14% 0.02272 168.28)",
+          "oklch(83.57% 0.02272 168.28)",
+          "oklch(95.00% 0.02272 168.28)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#59655b",
+        "tonalRamp": [
+          "oklch(15.00% 0.02154 150.21)",
+          "oklch(26.43% 0.02154 150.21)",
+          "oklch(37.86% 0.02154 150.21)",
+          "oklch(49.29% 0.02154 150.21)",
+          "oklch(60.71% 0.02154 150.21)",
+          "oklch(72.14% 0.02154 150.21)",
+          "oklch(83.57% 0.02154 150.21)",
+          "oklch(95.00% 0.02154 150.21)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Mineral Green",
+        "canonical": "#2f6e52",
+        "tonalRamp": [
+          "oklch(15.00% 0.07981 162.07)",
+          "oklch(26.43% 0.07981 162.07)",
+          "oklch(37.86% 0.07981 162.07)",
+          "oklch(49.29% 0.07981 162.07)",
+          "oklch(60.71% 0.07981 162.07)",
+          "oklch(72.14% 0.07981 162.07)",
+          "oklch(83.57% 0.07981 162.07)",
+          "oklch(95.00% 0.07981 162.07)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Fine Divider",
+        "canonical": "#d9ded5",
+        "tonalRamp": [
+          "oklch(15.00% 0.01325 130.79)",
+          "oklch(26.43% 0.01325 130.79)",
+          "oklch(37.86% 0.01325 130.79)",
+          "oklch(49.29% 0.01325 130.79)",
+          "oklch(60.71% 0.01325 130.79)",
+          "oklch(72.14% 0.01325 130.79)",
+          "oklch(83.57% 0.01325 130.79)",
+          "oklch(95.00% 0.01325 130.79)"
+        ]
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Action Green",
+        "canonical": "#375d3f",
+        "tonalRamp": [
+          "oklch(15.00% 0.06573 149.76)",
+          "oklch(26.43% 0.06573 149.76)",
+          "oklch(37.86% 0.06573 149.76)",
+          "oklch(49.29% 0.06573 149.76)",
+          "oklch(60.71% 0.06573 149.76)",
+          "oklch(72.14% 0.06573 149.76)",
+          "oklch(83.57% 0.06573 149.76)",
+          "oklch(95.00% 0.06573 149.76)"
+        ]
+      },
+      "action-hover": {
+        "role": "primary",
+        "displayName": "Action Green Hover",
+        "canonical": "#264a30",
+        "tonalRamp": [
+          "oklch(15.00% 0.06125 151.44)",
+          "oklch(26.43% 0.06125 151.44)",
+          "oklch(37.86% 0.06125 151.44)",
+          "oklch(49.29% 0.06125 151.44)",
+          "oklch(60.71% 0.06125 151.44)",
+          "oklch(72.14% 0.06125 151.44)",
+          "oklch(83.57% 0.06125 151.44)",
+          "oklch(95.00% 0.06125 151.44)"
+        ]
+      },
+      "action-ink": {
+        "role": "primary",
+        "displayName": "Action Light Ink",
+        "canonical": "#f4f7ef",
+        "tonalRamp": [
+          "oklch(15.00% 0.01101 123.46)",
+          "oklch(26.43% 0.01101 123.46)",
+          "oklch(37.86% 0.01101 123.46)",
+          "oklch(49.29% 0.01101 123.46)",
+          "oklch(60.71% 0.01101 123.46)",
+          "oklch(72.14% 0.01101 123.46)",
+          "oklch(83.57% 0.01101 123.46)",
+          "oklch(95.00% 0.01101 123.46)"
+        ]
+      },
+      "control-hover": {
+        "role": "neutral",
+        "displayName": "Control Hover",
+        "canonical": "#dfe6dc",
+        "tonalRamp": [
+          "oklch(15.00% 0.01533 136.08)",
+          "oklch(26.43% 0.01533 136.08)",
+          "oklch(37.86% 0.01533 136.08)",
+          "oklch(49.29% 0.01533 136.08)",
+          "oklch(60.71% 0.01533 136.08)",
+          "oklch(72.14% 0.01533 136.08)",
+          "oklch(83.57% 0.01533 136.08)",
+          "oklch(95.00% 0.01533 136.08)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus Green",
+        "canonical": "#438866",
+        "tonalRamp": [
+          "oklch(15.00% 0.08857 160.29)",
+          "oklch(26.43% 0.08857 160.29)",
+          "oklch(37.86% 0.08857 160.29)",
+          "oklch(49.29% 0.08857 160.29)",
+          "oklch(60.71% 0.08857 160.29)",
+          "oklch(72.14% 0.08857 160.29)",
+          "oklch(83.57% 0.08857 160.29)",
+          "oklch(95.00% 0.08857 160.29)"
+        ]
+      },
+      "room-selected": {
+        "role": "primary",
+        "displayName": "Selected Room Surface",
+        "canonical": "#e0e9da",
+        "tonalRamp": [
+          "oklch(15.00% 0.02219 132.54)",
+          "oklch(26.43% 0.02219 132.54)",
+          "oklch(37.86% 0.02219 132.54)",
+          "oklch(49.29% 0.02219 132.54)",
+          "oklch(60.71% 0.02219 132.54)",
+          "oklch(72.14% 0.02219 132.54)",
+          "oklch(83.57% 0.02219 132.54)",
+          "oklch(95.00% 0.02219 132.54)"
+        ]
+      },
+      "room-selected-ink": {
+        "role": "primary",
+        "displayName": "Selected Room Ink",
+        "canonical": "#305b3c",
+        "tonalRamp": [
+          "oklch(15.00% 0.07055 151.48)",
+          "oklch(26.43% 0.07055 151.48)",
+          "oklch(37.86% 0.07055 151.48)",
+          "oklch(49.29% 0.07055 151.48)",
+          "oklch(60.71% 0.07055 151.48)",
+          "oklch(72.14% 0.07055 151.48)",
+          "oklch(83.57% 0.07055 151.48)",
+          "oklch(95.00% 0.07055 151.48)"
+        ]
+      },
+      "stone-swatch": {
+        "role": "neutral",
+        "displayName": "Stone Sample",
+        "canonical": "#c8c5b7",
+        "tonalRamp": [
+          "oklch(15.00% 0.01948 96.91)",
+          "oklch(26.43% 0.01948 96.91)",
+          "oklch(37.86% 0.01948 96.91)",
+          "oklch(49.29% 0.01948 96.91)",
+          "oklch(60.71% 0.01948 96.91)",
+          "oklch(72.14% 0.01948 96.91)",
+          "oklch(83.57% 0.01948 96.91)",
+          "oklch(95.00% 0.01948 96.91)"
+        ]
+      },
+      "timber-swatch": {
+        "role": "neutral",
+        "displayName": "Timber Sample",
+        "canonical": "#b28d62",
+        "tonalRamp": [
+          "oklch(15.00% 0.07373 70.22)",
+          "oklch(26.43% 0.07373 70.22)",
+          "oklch(37.86% 0.07373 70.22)",
+          "oklch(49.29% 0.07373 70.22)",
+          "oklch(60.71% 0.07373 70.22)",
+          "oklch(72.14% 0.07373 70.22)",
+          "oklch(83.57% 0.07373 70.22)",
+          "oklch(95.00% 0.07373 70.22)"
+        ]
+      },
+      "metal-swatch": {
+        "role": "neutral",
+        "displayName": "Metal Sample",
+        "canonical": "#4d5950",
+        "tonalRamp": [
+          "oklch(15.00% 0.02088 153.06)",
+          "oklch(26.43% 0.02088 153.06)",
+          "oklch(37.86% 0.02088 153.06)",
+          "oklch(49.29% 0.02088 153.06)",
+          "oklch(60.71% 0.02088 153.06)",
+          "oklch(72.14% 0.02088 153.06)",
+          "oklch(83.57% 0.02088 153.06)",
+          "oklch(95.00% 0.02088 153.06)"
+        ]
+      },
+      "glass-swatch": {
+        "role": "neutral",
+        "displayName": "Glass Sample",
+        "canonical": "#bad0c8",
+        "tonalRamp": [
+          "oklch(15.00% 0.02615 171.82)",
+          "oklch(26.43% 0.02615 171.82)",
+          "oklch(37.86% 0.02615 171.82)",
+          "oklch(49.29% 0.02615 171.82)",
+          "oklch(60.71% 0.02615 171.82)",
+          "oklch(72.14% 0.02615 171.82)",
+          "oklch(83.57% 0.02615 171.82)",
+          "oklch(95.00% 0.02615 171.82)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Conversation introduction; responsive sizes are documented in DESIGN.md."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Evidence and document headings."
+      },
+      "model-title": {
+        "displayName": "Model Title",
+        "purpose": "Caption above the architectural model."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Selected-object inspector heading."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Application body default."
+      },
+      "conversation": {
+        "displayName": "Conversation",
+        "purpose": "Message container; paragraph line height remains 1.65."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Standard action and navigation labels."
+      },
+      "compact-label": {
+        "displayName": "Compact Label",
+        "purpose": "Compact secondary controls and room rows."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code and revision identifiers; some hash contexts use 8px."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating-tools",
+        "value": "0 8px 30px #22352a15",
+        "purpose": "Model modes and plan zoom; source --shadow."
+      },
+      {
+        "name": "plan-paper",
+        "value": "0 5px 20px #253d2010",
+        "purpose": "Scrollable SVG drawing sheet."
+      },
+      {
+        "name": "document-cover",
+        "value": "0 8px 28px #243d1b0b",
+        "purpose": "Desktop paper preview."
+      },
+      {
+        "name": "tablet-inspector",
+        "value": "-10px 0 30px #253b2014",
+        "purpose": "Inspector overlay at 761–1000px."
+      },
+      {
+        "name": "camera-tools",
+        "value": "0 4px 16px #323b3814",
+        "purpose": "Floating 3D camera control group."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-transition",
+        "value": "background 0.18s, color 0.18s, opacity 0.18s",
+        "purpose": "Shared button/link state transitions."
+      },
+      {
+        "name": "composer-focus",
+        "value": "border-color 0.2s",
+        "purpose": "Whole-composer focus treatment."
+      },
+      {
+        "name": "message-entrance",
+        "value": "0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "TranslateY 9px to 0 and blur 1.5px to 0."
+      },
+      {
+        "name": "pending-pulse",
+        "value": "1.2s infinite; stagger 0.15s",
+        "purpose": "Live pending dots; opacity 0.4 to 1 to 0.4."
+      },
+      {
+        "name": "job-pulse",
+        "value": "1.4s ease-in-out infinite",
+        "purpose": "Working save/job indicator."
+      },
+      {
+        "name": "recording-pulse",
+        "value": "1s infinite",
+        "purpose": "Active recording dot."
+      },
+      {
+        "name": "recording-wave",
+        "value": "0.8s ease-in-out infinite alternate",
+        "purpose": "Waveform scaleY 0.4 to 2."
+      },
+      {
+        "name": "loading-mark",
+        "value": "2.5s ease-in-out infinite",
+        "purpose": "Initial loading mark translates up by 8px at midpoint."
+      },
+      {
+        "name": "plan-hover",
+        "value": "fill 0.15s",
+        "purpose": "Plan room fill transition."
+      },
+      {
+        "name": "level-assembly",
+        "value": "1.1s; level stagger 0.12s; ease 1 - 2^(-10t)",
+        "purpose": "Canonical floor group scaleY 0.025 to 1 and display offset 0.8m to 0; reduced motion settles immediately. An accepted added level becomes active in Exploded 3D. The camera fits the current footprint and rendered vertical extents."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Disable CSS animation/transitions; instant conversation scrolling; settled model assembly. User-driven OrbitControls damping remains enabled."
+      },
+      {
+        "name": "active-floor-scroll",
+        "value": "instant; block: nearest; inline: nearest",
+        "purpose": "Keep the current level visible in the horizontally scrolling floor strip when the selected level or level count changes."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-max",
+        "value": "760px"
+      },
+      {
+        "name": "tablet-min",
+        "value": "761px"
+      },
+      {
+        "name": "tablet-max",
+        "value": "1000px"
+      },
+      {
+        "name": "compact-desktop-max",
+        "value": "1250px"
+      },
+      {
+        "name": "wide-desktop-min",
+        "value": "1600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary package action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main document/package action with a dark-green hover state.",
+      "html": "<button class=\"ds-primary\">Generate review package</button>",
+      "css": ".ds-primary { font-family: var(--font-body, Geist, sans-serif); background: #375d3f; color: #f4f7ef; border: 0; border-radius: 5px; min-height: 39px; padding: 0 14px; font-size: 11px; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-primary:hover:not(:disabled) { background: #264a30; } .ds-primary:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-primary:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-primary { transition: none; } }"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet outlined action for regeneration and supporting edits. Building levels reuses it for Remove {floor label} on living floors other than Ground, with an explanation that removal lowers higher levels and can be undone; pending work disables the action.",
+      "html": "<button class=\"ds-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/></svg>Remove Upper floor</button>",
+      "css": ".ds-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-family: var(--font-body, Geist, sans-serif); background: none; color: var(--ink, #24332d); border: 1px solid #cdd7c5; border-radius: 5px; min-height: 36px; padding: 0 12px; font-size: 10px; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-secondary:hover:not(:disabled) { background: #dfe6dc; } .ds-secondary:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-secondary:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-secondary { transition: none; } }"
+    },
+    {
+      "name": "Header export action",
+      "kind": "button",
+      "refersTo": "button-export",
+      "description": "Pale-green export action in the charcoal project header.",
+      "html": "<div class=\"ds-header\"><button class=\"ds-export\">Export</button></div>",
+      "css": ".ds-header { background: var(--charcoal, #202923); padding: 12px; } .ds-export { font-family: var(--font-body, Geist, sans-serif); background: #d3e5c7; color: #293d2a; border: 0; border-radius: 5px; min-height: 35px; padding: 0 14px; font-size: 11px; font-weight: 550; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-export:hover:not(:disabled) { background: #e2eedb; } .ds-export:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-export:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-export { transition: none; } }"
+    },
+    {
+      "name": "Send action",
+      "kind": "button",
+      "refersTo": "button-send",
+      "description": "Compact arrow action in the conversation composer.",
+      "html": "<button class=\"ds-send\" aria-label=\"Send design request\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20V4m-6 6 6-6 6 6\"/></svg></button>",
+      "css": ".ds-send { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; min-height: 32px; background: #345f44; color: #fff; border: 0; border-radius: 6px; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-send:hover:not(:disabled) { background: #244b33; } .ds-send:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-send:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-send { transition: none; } } .ds-send:disabled { opacity: 0.35; }"
+    },
+    {
+      "name": "Dimension edit field",
+      "kind": "input",
+      "refersTo": "input-edit",
+      "description": "Labeled numeric entry with an attached Apply action and tabular numerals.",
+      "html": "<label class=\"ds-edit-label\">Target area (m²)<span class=\"ds-edit\"><input type=\"number\" value=\"65\" aria-label=\"Target area in square metres\"/><button>Apply</button></span></label>",
+      "css": ".ds-edit-label { font-family: var(--font-body, Geist, sans-serif); display: block; font-size: 10px; color: var(--muted, #59655b); } .ds-edit { display: flex; border: 1px solid #c7d2be; border-radius: 5px; margin-top: 6px; overflow: hidden; background: var(--paper, #fcfcf8); } .ds-edit input { font-family: var(--font-body, Geist, sans-serif); min-width: 0; width: 100%; border: 0; background: none; padding: 9px; color: #304e32; font-size: 13px; font-variant-numeric: tabular-nums; caret-color: var(--accent, #2f6e52); } .ds-edit button { font-family: var(--font-body, Geist, sans-serif); border: 0; background: #e0e9d8; color: var(--ink, #24332d); min-height: 34px; padding: 0 11px; font-size: 10px; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-edit button:hover:not(:disabled) { background: #dfe6dc; } .ds-edit input:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-edit button:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-edit button:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-edit button { transition: none; } }"
+    },
+    {
+      "name": "Workspace view and floor navigation",
+      "kind": "nav",
+      "refersTo": "navigation-tab",
+      "description": "View tabs and a horizontally scrolling snapshot-driven level strip with elevation labels and an accessible Add another level action. New levels activate Exploded 3D. A surviving current floor stays selected; removing it selects the nearest surviving living floor below its prior elevation, then falls back to Ground, the first living floor or the first remaining level. Removed room selections clear.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Design view\"><button aria-pressed=\"true\">Model</button><button aria-pressed=\"false\">Plan</button><button aria-pressed=\"false\">Documents</button></nav><div class=\"ds-floor-bar\"><div class=\"ds-floors\"><button aria-pressed=\"true\"><span>Ground</span><small>+0.00 m</small></button><button class=\"ds-add-level\" aria-label=\"Add another level\" title=\"Add a floor below the roof using the top floor’s layout\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button></div></div>",
+      "css": ".ds-tabs { display: flex; gap: 3px; padding: 12px; background: var(--paper, #fcfcf8); } .ds-tabs button { font-family: var(--font-body, Geist, sans-serif); border: 0; background: none; color: var(--muted, #59655b); border-radius: 5px; min-height: 32px; padding: 0 11px; font-size: 11px; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-tabs button[aria-pressed=\"true\"] { background: #e9eee4; color: #284c34; font-weight: 600; } .ds-tabs button:hover:not(:disabled) { background: #dfe6dc; } .ds-tabs button:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-tabs button:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-tabs button { transition: none; } } .ds-floor-bar { height: 69px; display: flex; align-items: center; gap: 10px; padding: 0 23px; border-top: 1px solid var(--line, #d9ded5); background: var(--paper, #fcfcf8); } .ds-floors { min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: thin; display: flex; align-items: center; gap: 7px; } .ds-floors button { font-family: var(--font-body, Geist, sans-serif); display: inline-flex; align-items: center; justify-content: center; flex-direction: column; flex-shrink: 0; gap: 4px; min-height: 44px; min-width: 76px; padding: 5px 13px; border: 0; border-radius: 5px; font-size: 11px; color: var(--muted, #59655b); background: none; cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-floors button[aria-pressed=\"true\"] { background: #e6edde; color: #2c5739; } .ds-floors button small { font-size: 9px; color: var(--muted, #59655b); font-variant-numeric: tabular-nums; } .ds-floors .ds-add-level { min-width: 38px; padding: 5px 9px; flex: 0 0 auto; } .ds-floors button:hover:not(:disabled) { background: #dfe6dc; } .ds-floors button:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-floors button:disabled { cursor: not-allowed; opacity: 0.4; } @media (max-width: 1250px) { .ds-floors { gap: 1px; } .ds-floors button { min-width: 57px; padding: 5px 7px; font-size: 10px; } } @media (max-width: 760px) { .ds-floor-bar { height: 62px; padding: 0 10px; gap: 4px; } .ds-floors { gap: 2px; } .ds-floors button { flex: 0 0 auto; font-size: 9px; padding: 4px 7px; } .ds-floors button small { font-size: 8px; } } @media (prefers-reduced-motion: reduce) { .ds-floors button { transition: none; } }"
+    },
+    {
+      "name": "Warning status",
+      "kind": "chip",
+      "refersTo": "state-warning",
+      "description": "Noninteractive status text with a warm warning surface.",
+      "html": "<span class=\"ds-warning\">Not evaluated</span>",
+      "css": ".ds-warning { font-family: var(--font-body, Geist, sans-serif); display: inline-block; background: #f1ead6; color: #765c38; font-size: 10px; border-radius: 4px; padding: 5px 8px; }"
+    },
+    {
+      "name": "Document cover preview",
+      "kind": "card",
+      "refersTo": "sheet-preview",
+      "description": "Square, softly lifted paper preview in the desktop Documents overview.",
+      "html": "<div class=\"ds-sheet\"><span class=\"ds-sheet-brand\">NODESNAP</span><h2>Design review package</h2><span class=\"ds-sheet-revision\">Revision 6 · Synthetic villa</span></div>",
+      "css": ".ds-sheet { font-family: var(--font-body, Geist, sans-serif); background: #fffffc; color: #4d6643; padding: 20px 17px; min-height: 255px; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 8px 28px #243d1b0b; } .ds-sheet-brand { font-size: 9px; letter-spacing: 0.12em; } .ds-sheet h2 { font-size: 18px; font-weight: 500; line-height: 1.25; letter-spacing: -0.025em; margin: auto 0 0; } .ds-sheet-revision { color: var(--muted, #59655b); font-size: 8px; margin-top: 14px; }"
+    },
+    {
+      "name": "Conversation composer",
+      "kind": "custom",
+      "refersTo": "composer",
+      "description": "Paper input surface whose full border carries the focus treatment. New-building entry uses a larger labeled variant with an Accent focus outline; text and voice share an editable field, clarification stays inline and failed briefs remain available for retry. This snippet represents the workspace conversation variant.",
+      "html": "<div class=\"ds-composer\"><textarea aria-label=\"Describe your design change\" placeholder=\"Describe your design change…\"></textarea><span class=\"ds-composer-hint\">Changes create a new revision</span></div>",
+      "css": ".ds-composer { background: var(--paper, #fcfcf8); border: 1px solid #cbd4c6; border-radius: 12px; padding: 12px 11px 8px; transition: border-color 0.2s; } .ds-composer:focus-within { border-color: var(--accent, #2f6e52); } .ds-composer textarea { font-family: var(--font-body, Geist, sans-serif); resize: none; border: 0; background: none; width: 100%; min-height: 65px; padding: 0 3px; font-size: 12px; line-height: 1.6; color: var(--ink, #24332d); caret-color: var(--accent, #2f6e52); outline: none; } .ds-composer textarea:focus-visible { outline: none; } .ds-composer textarea::placeholder, .ds-composer-hint { color: var(--muted, #59655b); } .ds-composer-hint { font-family: var(--font-body, Geist, sans-serif); font-size: 9px; } @media (prefers-reduced-motion: reduce) { .ds-composer { transition: none; } }"
+    },
+    {
+      "name": "Selected room row",
+      "kind": "custom",
+      "refersTo": "room-row",
+      "description": "A room name, geometric symbol and area share the selected treatment.",
+      "html": "<button class=\"ds-room ds-room-selected\"><span class=\"ds-room-symbol\"></span><span class=\"ds-room-name\">Dining</span><small>235.1 ft²</small></button>",
+      "css": ".ds-room { font-family: var(--font-body, Geist, sans-serif); display: inline-flex; align-items: center; justify-content: flex-start; gap: 7px; width: 100%; min-height: 35px; text-align: left; border: 0; border-radius: 4px; padding: 9px 3px; font-size: 10px; background: none; color: var(--ink, #24332d); cursor: pointer; transition: background 0.18s, color 0.18s, opacity 0.18s; } .ds-room-selected { background: #e0e9da; color: #305b3c; } .ds-room-name { flex: 1; min-width: 0; } .ds-room small { font-size: 9px; color: var(--muted, #59655b); white-space: nowrap; } .ds-room-symbol { width: 7px; height: 7px; background: #bdd0b1; border: 1px solid #97af89; border-radius: 1px; } .ds-room:hover:not(:disabled) { background: #dfe6dc; } .ds-room:focus-visible { outline: 2px solid #438866; outline-offset: 3px; } .ds-room:disabled { cursor: not-allowed; opacity: 0.4; } @media (prefers-reduced-motion: reduce) { .ds-room { transition: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Architectural Exhibition",
+    "overview": "NodeSnap frames an editable building as an architectural exhibition: charcoal navigation, a light mineral model table, warm physical materials and a restrained green accent. The tone is precise and approachable, with the building and conversation carrying the experience.\n\nThe interface uses compact controls, quiet panel dividers and generous space around the model. Stone, timber, metal and glass belong to the architectural subject; their visual richness does not require a busier application shell. Motion reveals the accepted geometry and the arrival of a response.",
+    "keyCharacteristics": [
+      "Charcoal frame and layered ivory work surfaces.",
+      "Green action, selection and focus treatments with text and shape cues.",
+      "Geist typography with tabular measurement numerals.",
+      "Physical architectural materials and restrained interface depth.",
+      "Revision-aware model assembly with a settled reduced-motion presentation."
+    ],
+    "rules": [
+      {
+        "name": "The Material and Interface Rule",
+        "body": "Use the green family for interface emphasis; keep stone, timber, metal and glass variation attached to the architectural model and its material previews.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Frame Rule",
+        "body": "Use tonal surfaces and fine dividers for persistent panels; reserve soft shadows for floating tools, drawing sheets and the temporary inspector overlay.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do reuse the current semantic colors and Geist hierarchy when extending the studio.",
+      "Do retain a clear selected state in the model or plan, the room list and the contextual inspector.",
+      "Do show exact selected-room quantities in the inspector when drawing labels become small.",
+      "Do preserve revision identity and visible missing-evidence states beside architectural output.",
+      "Do respect reduced motion for assembly, message entrances, pending indicators and conversation scrolling."
+    ],
+    "donts": [
+      "Don't introduce a second promotional accent into the quiet application frame.",
+      "Don't use presentation furniture or finishes as evidence of canonical geometry, material performance or engineering approval.",
+      "Don't replace responsive workspace switching with a compressed three-column mobile layout.",
+      "Don't use the smallest existing technical annotations as the default size for new body copy."
+    ]
+  }
+}

@@ -14,12 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NodeSnap",
-  description: "Describe a home — coordinated design, real calculations, professional review package",
+  description:
+    "Describe a home — coordinated design, real calculations, professional review package",
 };
 
 export const viewport = { width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>{children}</body>

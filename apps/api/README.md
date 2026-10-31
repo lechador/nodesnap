@@ -1,0 +1,23 @@
+# NodeSnap studio API
+
+Run from the repository root with `.venv/bin/python -m uvicorn app.main:app --app-dir apps/api --port 8000` after `uv sync --all-packages --frozen`.
+The existing Docker entry point, PostgreSQL URL, artifact volume, same-origin routes and provider environment variables are unchanged.
+
+The API is separated into HTTP/controller routes (`main.py`), transactional persistence (`database.py`), deterministic result composition (`analysis.py`), budget accounting (`budget.py`), and a single Meta transport/proposal boundary (`meta.py`, `orchestrate.py`). The canonical Python domain model remains authoritative.
+
+- Sessions use opaque, hashed credentials, HttpOnly/SameSite cookies, and Secure cookies behind HTTPS. Creating a session resumes an existing valid cookie.
+- Browser mutation requests validate the exact Origin scheme/host/port and reject malformed/null/multiple origins and cross-site fetch metadata. Existing Next/Caddy forwarded host/proto are accepted only from loopback/private peers under the internal-only API topology. This is a trusted-network boundary; forwarded headers are not cryptographically authenticated. Requests without Origin remain subject to ordinary route authorization.
+- All building mutations require `If-Match` and `Idempotency-Key`, with the same revision in the body. Successful retries return the stored response before comparing the current head. Command IDs also prevent replay under a new request key. Head updates use a conditional SQL UPDATE in the revision transaction.
+- Restore creates a new immutable revision. Generation and direct/chat edits re-derive architectural objects and validate their topology before commitment.
+- GET project, revision and conversation collections allow recovery after reloading. Project events are persisted and streamed with resumable SSE IDs.
+- Analyses remain synchronous in the API process and report that execution mode. Their result records carry snapshot hash, implementation hash, engine versions and source/scope information. Historical or implementation-obsolete results are stale.
+- Exports freeze one revision, result set and coverage set. Artifact records bind every PDF/model/manifest to its owner. Downloads validate ownership and the actual file hash. The manifest's own hash is stored outside its bytes. Existing deployment artifacts recover ownership from their saved manifests; unbound files cannot be downloaded.
+- Meta calls only use the official HTTPS origin and allowlisted reasoning/transcription model classes. The adapter verifies configured model access via `/models`; output undergoes schema and domain validation. One project can have one conversation in flight; malformed proposals receive at most two repairs. Expired unfinished chat receipts/leases can recover after ten minutes.
+- Concurrent provider work atomically reserves budget before requests. Edit routing reserves $0.50 per call with a 4,096-token output limit; whole-building program inference reserves $1.00 per call with a 16,384-token output limit. Both use bounded prompts and low reasoning effort; observed usage settles the reservation. Unknown provider outcomes retain the reservation as estimated spend. A process crash leaves outstanding reservations conservatively held. No credentials are returned or logged by the adapter.
+- Audio accepts mono 16-bit WAV at 16/24 kHz, at most 60 seconds, before any provider work. A transcript is returned for review; it does not mutate the building.
+
+Run the risk-based acceptance suite with `.venv/bin/python -m pytest tests/test_api_studio.py -q`. Provider tests inject explicit synthetic responses; these establish controller behavior, not live Meta availability. Numerical fixtures remain in the shared `tests/` suite.
+
+The fixed structural frame is still a separately declared demonstration scenario: its loads and members do not derive from edited pool/room/facade geometry. The result includes this limitation. The engineering package does not claim discipline completion or code compliance. Analyses/exports are not yet worker jobs, existing guest tokens have no server-side expiry record, and production Postgres/Compose concurrency has not been exercised by the local SQLite acceptance suite.
+
+Primary implementation references checked 2026-10-31: [SQLAlchemy transaction management](https://docs.sqlalchemy.org/en/20/orm/session_transaction.html), [FastAPI error handling](https://fastapi.tiangolo.com/tutorial/handling-errors/), [Meta structured output](https://dev.meta.ai/docs/structured-output), [Meta pricing](https://dev.meta.ai/docs/pricing-rate-limits). API dependencies are pinned to the versions installed by the repository's lockfile.
