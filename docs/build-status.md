@@ -26,7 +26,10 @@
 - Env audit: code reads META_API_KEY/BASE_URL/REASONING/TRANSCRIPTION models,
   DATABASE_URL, ARTIFACT_ROOT, APP_SPEND_CEILING_USD only. `SESSION_SECRET`,
   `REDIS_URL`, `DEMO_MODE` in .env.example are not read by the code.
-- Gaps: sslip.io hostname is a placeholder (founder domain pending); Linode
+- Domain connected 2026-10-30: nodesnap.tech (+ www) A/CNAME -> 23.92.16.155,
+  DOMAIN switched on server, Let's Encrypt certs for both names obtained and
+  externally verified (apex/www 200, http->https 308, /health ok).
+- Gaps: Linode
   firewall not used (host ufw instead, token has no firewall need); backup
   snapshot not yet taken.
 

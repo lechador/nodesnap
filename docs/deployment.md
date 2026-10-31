@@ -17,8 +17,9 @@ artifacts and Caddy certs. The api service also serves `/artifacts` via the
 web proxy. All services `restart: unless-stopped`.
 
 Live since 2026-10-30: Linode `nodesnap` (us-east, 4 vCPU / 8 GB) at
-https://23-92-16-155.sslip.io — replace with a founder domain by pointing a
-subdomain A-record at the server and changing `DOMAIN` in `infra/.env`.
+**https://nodesnap.tech** (also www.nodesnap.tech; A -> 23.92.16.155 at
+Namecheap, Let's Encrypt certs for both names verified 2026-10-30).
+Fallback hostname https://23-92-16-155.sslip.io no longer configured.
 
 Not yet in Compose: a queue worker. Analyses/exports currently execute in the API process
 and are recorded in Postgres; Redis is provisioned for the RQ worker that moves them
