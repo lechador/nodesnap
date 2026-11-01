@@ -6,6 +6,8 @@ import Icon, { type IconName } from "./components/Icon";
 import NewDesign from "./components/NewDesign";
 import StudioHome from "./components/StudioHome";
 import SiteControls from "./components/SiteControls";
+import SiteInspector from "./components/SiteInspector";
+import { findSiteFeature, siteFeatures } from "./site-selection";
 import { useStudio } from "./lib/useStudio";
 import { useMicrophone } from "./lib/useMicrophone";
 import { area, areaLabel, bounds, length, title } from "./lib/format";
@@ -266,7 +268,10 @@ export default function Home() {
           survivingFloor(current, previous.levels, next.levels),
         );
         setSelected((current) =>
-          next.spaces.some((s) => s.id === current) ? current : "",
+          next.spaces.some((s) => s.id === current) ||
+          findSiteFeature(next, current)
+            ? current
+            : "",
         );
       }
     } else {
@@ -316,9 +321,11 @@ export default function Home() {
   }, [level, snap?.levels.length]);
   const end = useRef<HTMLDivElement>(null),
     composer = useRef<HTMLTextAreaElement>(null),
-    inspectorScroll = useRef<HTMLDivElement>(null);
+    inspectorScroll = useRef<HTMLDivElement>(null),
+    focusInspector = useRef(false);
   const mic = useMicrophone(snap?.project_id, setText, studio.setError);
   const selectedSpace = snap?.spaces.find((s) => s.id === selected),
+    selectedSite = snap ? findSiteFeature(snap, selected) : undefined,
     selectedMetric = snap?.architecture?.space_metrics.find(
       (m) => m.space_id === selected,
     ),
@@ -369,11 +376,23 @@ export default function Home() {
         ? String(Math.round(selectedSpace.target_area_m2 * 10) / 10)
         : "";
   useLayoutEffect(() => {
-    if (selected && inspectorTab === "design" && inspectorOpen) {
-      inspectorScroll.current?.scrollTo({ top: 0 });
+    if (inspectorTab === "design" && inspectorOpen) {
+      if (selected || focusInspector.current)
+        inspectorScroll.current?.scrollTo({ top: 0 });
+      if (focusInspector.current) {
+        inspectorScroll.current
+          ?.querySelector<HTMLElement>(".inspector-title h2")
+          ?.focus({ preventScroll: true });
+        focusInspector.current = false;
+      }
     }
   }, [selected, inspectorTab, inspectorOpen, mobileTab]);
   function select(id: string) {
+    focusInspector.current =
+      !!inspectorScroll.current?.contains(document.activeElement) ||
+      (!!snap &&
+        !!findSiteFeature(snap, id) &&
+        window.matchMedia("(max-width: 760px)").matches);
     setSelected(id);
     setInspectorTab("design");
     setInspectorOpen(true);
@@ -382,6 +401,10 @@ export default function Home() {
       const space = snap.spaces.find((s) => s.id === id);
       const l = snap.levels.find((l) => l.id === space?.level_id);
       if (l) setLevel(l.name);
+      if (findSiteFeature(snap, id)) {
+        setLevel("ground");
+        setMobileTab("details");
+      }
     }
   }
   function chooseFloor(name: string) {
@@ -871,7 +894,9 @@ export default function Home() {
         ) : (
           <>
             {(view === "3d" || view === "plan" || view === "site") && (
-              <div className="model-stage">
+              <div
+                className={`model-stage ${view === "3d" || view === "site" ? "site-interactive" : ""}`}
+              >
                 <div className="model-caption">
                   <h1>
                     {view === "3d"
@@ -892,6 +917,27 @@ export default function Home() {
                         : "Precise geometry. One coordinated model."}
                   </p>
                 </div>
+                {(view === "3d" || view === "site") && (
+                  <nav
+                    className="site-object-picker"
+                    aria-label="Inspect project objects"
+                  >
+                    {siteFeatures(snap).map((feature) => (
+                      <button
+                        key={feature.id}
+                        aria-label={`Inspect ${feature.label.toLowerCase()}`}
+                        aria-pressed={selected === feature.id}
+                        onClick={() => select(feature.id)}
+                      >
+                        <Icon
+                          name={feature.kind === "garage" ? "cube" : "site"}
+                          size={14}
+                        />
+                        {feature.label}
+                      </button>
+                    ))}
+                  </nav>
+                )}
                 {!snap.architecture && (
                   <div className="legacy-upgrade">
                     <p>
@@ -931,7 +977,12 @@ export default function Home() {
                     replayKey={replay}
                   />
                 ) : view === "site" ? (
-                  <SitePlan snap={snap} units={units} />
+                  <SitePlan
+                    snap={snap}
+                    units={units}
+                    selected={selected}
+                    onSelect={select}
+                  />
                 ) : (
                   <Plan2D
                     snap={snap}
@@ -980,7 +1031,9 @@ export default function Home() {
                     </div>
                     <div className="camera-hint">
                       <Icon name="move" size={14} />
-                      <span>Drag to orbit · Scroll to zoom · Click a room</span>
+                      <span>
+                        Drag to orbit · Scroll to zoom · Click to inspect
+                      </span>
                     </div>
                     <div className="model-modes" aria-label="Model display">
                       {(["building", "cutaway", "exploded"] as const).map(
@@ -1243,84 +1296,113 @@ export default function Home() {
           ) : (
             snap && (
               <>
-                <div className="inspector-title">
-                  <span className="object-symbol">
-                    <Icon name={selectedSpace ? "plan" : "cube"} size={28} />
-                  </span>
-                  <h2>{selectedSpace?.name ?? "Your building at a glance"}</h2>
-                  <p>
-                    {selectedSpace
-                      ? `${currentLevel?.label} · ${title(selectedSpace.use)}`
-                      : `${title(snap.brief.use)} · Concept design`}
-                  </p>
-                </div>
-                <div className="properties">
-                  {selectedSpace ? (
-                    <>
-                      <Field
-                        label="Clear floor area"
-                        value={areaLabel(
-                          selectedMetric?.net_area_m2 ??
-                            area(selectedSpace.polygon),
-                          units,
-                        )}
-                      />
-                      <Field
-                        label="Planning zone"
-                        value={areaLabel(area(selectedSpace.polygon), units)}
-                      />
-                      <Field
-                        label="Clear width"
-                        value={length(
-                          selectedMetric?.clear_width_m ??
-                            bounds(selectedSpace.polygon).w,
-                          units,
-                        )}
-                      />
-                      <Field
-                        label="Clear depth"
-                        value={length(
-                          selectedMetric?.clear_depth_m ??
-                            bounds(selectedSpace.polygon).h,
-                          units,
-                        )}
-                      />
-                      <Field
-                        label="Classification"
-                        value={title(selectedSpace.classification)}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <Field
-                        label="Occupied floors"
-                        value={livingLevels.length}
-                      />
-                      <Field
-                        label="Principal rooms"
-                        value={
-                          snap.spaces.filter(
-                            (s) =>
-                              s.classification === "principal" &&
-                              livingLevels.some((l) => l.id === s.level_id),
-                          ).length
-                        }
-                      />
-                      <Field
-                        label="Current floor zones"
-                        value={areaLabel(
-                          spaces.reduce((n, s) => n + area(s.polygon), 0),
-                          units,
-                        )}
-                      />
-                      <Field
-                        label="Roof terrace"
-                        value={areaLabel(snap.roof_terrace_area_m2 ?? 0, units)}
-                      />
-                      <Field label="Site basis" value="Demonstration" />
-                    </>
-                  )}
-                </div>
+                {selectedSite ? (
+                  <>
+                    <button
+                      className="inspector-back"
+                      onClick={() => select("")}
+                    >
+                      <Icon name="arrow" size={14} /> Building overview
+                    </button>
+                    <SiteInspector
+                      snap={snap}
+                      featureId={selected}
+                      units={units}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="inspector-title">
+                      <span className="object-symbol">
+                        <Icon
+                          name={selectedSpace ? "plan" : "cube"}
+                          size={28}
+                        />
+                      </span>
+                      <h2 tabIndex={-1}>
+                        {selectedSpace?.name ?? "Your building at a glance"}
+                      </h2>
+                      <p>
+                        {selectedSpace
+                          ? `${currentLevel?.label} · ${title(selectedSpace.use)}`
+                          : `${title(snap.brief.use)} · Concept design`}
+                      </p>
+                    </div>
+                    <div className="properties">
+                      {selectedSpace ? (
+                        <>
+                          <Field
+                            label="Clear floor area"
+                            value={areaLabel(
+                              selectedMetric?.net_area_m2 ??
+                                area(selectedSpace.polygon),
+                              units,
+                            )}
+                          />
+                          <Field
+                            label="Planning zone"
+                            value={areaLabel(
+                              area(selectedSpace.polygon),
+                              units,
+                            )}
+                          />
+                          <Field
+                            label="Clear width"
+                            value={length(
+                              selectedMetric?.clear_width_m ??
+                                bounds(selectedSpace.polygon).w,
+                              units,
+                            )}
+                          />
+                          <Field
+                            label="Clear depth"
+                            value={length(
+                              selectedMetric?.clear_depth_m ??
+                                bounds(selectedSpace.polygon).h,
+                              units,
+                            )}
+                          />
+                          <Field
+                            label="Classification"
+                            value={title(selectedSpace.classification)}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <Field
+                            label="Occupied floors"
+                            value={livingLevels.length}
+                          />
+                          <Field
+                            label="Principal rooms"
+                            value={
+                              snap.spaces.filter(
+                                (s) =>
+                                  s.classification === "principal" &&
+                                  livingLevels.some((l) => l.id === s.level_id),
+                              ).length
+                            }
+                          />
+                          <Field
+                            label="Current floor zones"
+                            value={areaLabel(
+                              spaces.reduce((n, s) => n + area(s.polygon), 0),
+                              units,
+                            )}
+                          />
+                          <Field
+                            label="Roof terrace"
+                            value={areaLabel(
+                              snap.roof_terrace_area_m2 ?? 0,
+                              units,
+                            )}
+                          />
+                          <Field label="Site basis" value="Demonstration" />
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
                 {selectedSpace &&
                   selectedSpace.classification === "principal" &&
                   canReplan && (
@@ -1360,11 +1442,13 @@ export default function Home() {
                     </div>
                   )}
                 <SiteControls
-                  key={snap.revision_id}
+                  key={`${snap.revision_id}-${selectedSite?.id ?? "building"}`}
                   snap={snap}
                   units={units}
                   disabled={!!busy || mic.state !== "idle"}
                   error={error}
+                  selected={selected}
+                  onSelect={select}
                   onCommand={(commands, label) =>
                     void studio.command(commands, label)
                   }
@@ -1416,7 +1500,7 @@ export default function Home() {
                       <p>Flat-bottom basin · demonstration assumption</p>
                     </div>
                   )}
-                {aboveLevel && currentLevel && (
+                {!selectedSite && aboveLevel && currentLevel && (
                   <div className="edit-block">
                     <h3>Floor-to-floor height</h3>
                     <label>
@@ -1539,53 +1623,71 @@ export default function Home() {
                       </p>
                     </div>
                   )}
-                <section className="material-section">
-                  <h3>Material story</h3>
-                  <div className="material-swatches">
-                    <div>
-                      <span className="swatch stone" />
-                      <span>Stone</span>
-                    </div>
-                    <div>
-                      <span className="swatch timber" />
-                      <span>Timber</span>
-                    </div>
-                    <div>
-                      <span className="swatch metal" />
-                      <span>Metal</span>
-                    </div>
-                    <div>
-                      <span className="swatch glass" />
-                      <span>Glass</span>
-                    </div>
-                  </div>
-                  <label className="palette-picker">
-                    Finish palette
-                    <select
-                      aria-label="Finish palette"
-                      value={snap.material_palette ?? "limestone_oak"}
-                      disabled={!!busy}
-                      onChange={(e) =>
-                        void studio.command(
-                          [
-                            {
-                              type: "set_material_palette",
-                              palette: e.target.value,
-                            },
-                          ],
-                          "Updating materials",
-                        )
-                      }
-                    >
-                      <option value="limestone_oak">Limestone & oak</option>
-                      <option value="warm_concrete">Warm concrete</option>
-                      <option value="white_stucco">White stucco</option>
-                    </select>
-                  </label>
-                  <p>
-                    Visual finishes. Assembly performance requires verification.
-                  </p>
-                </section>
+                {(!selectedSite ||
+                  selectedSite.kind === "garage" ||
+                  selectedSite.kind === "boundary") && (
+                  <section className="material-section">
+                    <h3>
+                      {selectedSite
+                        ? "Project finish palette"
+                        : "Material story"}
+                    </h3>
+                    {!selectedSite && (
+                      <div className="material-swatches">
+                        <div>
+                          <span className="swatch stone" />
+                          <span>
+                            {snap.material_palette === "white_stucco"
+                              ? "Stucco"
+                              : snap.material_palette === "warm_concrete"
+                                ? "Concrete"
+                                : "Stone"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="swatch timber" />
+                          <span>Timber</span>
+                        </div>
+                        <div>
+                          <span className="swatch metal" />
+                          <span>Metal</span>
+                        </div>
+                        <div>
+                          <span className="swatch glass" />
+                          <span>Glass</span>
+                        </div>
+                      </div>
+                    )}
+                    <label className="palette-picker">
+                      Finish palette
+                      <select
+                        aria-label="Finish palette"
+                        value={snap.material_palette ?? "limestone_oak"}
+                        disabled={!!busy}
+                        onChange={(e) =>
+                          void studio.command(
+                            [
+                              {
+                                type: "set_material_palette",
+                                palette: e.target.value,
+                              },
+                            ],
+                            "Updating materials",
+                          )
+                        }
+                      >
+                        <option value="limestone_oak">Limestone & oak</option>
+                        <option value="warm_concrete">Warm concrete</option>
+                        <option value="white_stucco">White stucco</option>
+                      </select>
+                    </label>
+                    <p>
+                      {selectedSite
+                        ? "Applies visual finishes across the building, garage and paving. Construction specifications remain unverified."
+                        : "Visual finishes. Assembly performance requires verification."}
+                    </p>
+                  </section>
+                )}
                 <section className="rooms-section">
                   <div className="section-inline">
                     <h3>{currentLevel?.label}</h3>

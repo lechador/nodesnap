@@ -18,11 +18,12 @@ import {
   useThree,
   type ThreeEvent,
 } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
+import { Html, Line, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
   modelBounds,
+  boundsOf,
   sceneVerticalBounds,
   orthographicFrame,
   movablePartitions,
@@ -38,7 +39,8 @@ import {
   type Surface,
 } from "./scene-model";
 
-import { garageParts, waterPolygon } from "./site-model";
+import { garageParts, waterPolygon, type SiteSurface } from "./site-model";
+import { PROJECT_BOUNDARY_ID, projectBoundaryPolygon } from "./site-selection";
 
 export type ModelView = "building" | "cutaway" | "exploded";
 export interface Villa3DProps {
@@ -259,6 +261,12 @@ function Boxes({
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const { gl, invalidate } = useThree();
+  useEffect(
+    () => () => {
+      gl.domElement.style.cursor = "grab";
+    },
+    [gl],
+  );
   useLayoutEffect(() => {
     const mesh = ref.current;
     if (!mesh) return;
@@ -285,7 +293,7 @@ function Boxes({
     const objectId = parts[event.instanceId ?? -1]?.objectId;
     if (objectId) {
       event.stopPropagation();
-      onSelect?.(objectId);
+      if (event.delta <= 5) onSelect?.(objectId);
     }
   };
   return (
@@ -296,8 +304,10 @@ function Boxes({
       receiveShadow
       onClick={pick}
       onPointerOver={(e) => {
-        if (parts[e.instanceId ?? -1]?.objectId)
+        if (parts[e.instanceId ?? -1]?.objectId) {
+          e.stopPropagation();
           gl.domElement.style.cursor = "pointer";
+        }
       }}
       onPointerOut={() => {
         gl.domElement.style.cursor = "grab";
@@ -525,7 +535,7 @@ function Floor({
               }
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect?.(space.id);
+                if (e.delta <= 5) onSelect?.(space.id);
               }}
             />
           );
@@ -558,22 +568,146 @@ function Floor({
   );
 }
 
+/** Select the actual surface mesh: its holes remain open to deck/water picking. */
+function SelectableSiteObject({
+  id,
+  onSelect,
+  children,
+}: {
+  id: string;
+  onSelect?: (id: string) => void;
+  children: ReactNode;
+}) {
+  const { gl } = useThree();
+  useEffect(
+    () => () => {
+      gl.domElement.style.cursor = "grab";
+    },
+    [gl],
+  );
+  return (
+    <group
+      onClick={(event) => {
+        event.stopPropagation();
+        // OrbitControls also starts on these meshes; a drag is not a pick.
+        if (event.delta <= 5) onSelect?.(id);
+      }}
+      onPointerOver={(event) => {
+        event.stopPropagation();
+        gl.domElement.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        gl.domElement.style.cursor = "grab";
+      }}
+    >
+      {children}
+    </group>
+  );
+}
+
+function SiteOutline({
+  polygon,
+  holes = [],
+  elevation,
+  boundary = false,
+  selected = true,
+}: {
+  polygon: number[][];
+  holes?: number[][][];
+  elevation: number;
+  boundary?: boolean;
+  selected?: boolean;
+}) {
+  const rings = useMemo(
+    () =>
+      [polygon, ...holes].map((ring) => {
+        if (ring.length < 3) return [];
+        const closed =
+          ring[0][0] === ring.at(-1)![0] && ring[0][1] === ring.at(-1)![1]
+            ? ring
+            : [...ring, ring[0]];
+        return closed.map(
+          ([x, y]) => [x, elevation, -y] as [number, number, number],
+        );
+      }),
+    [polygon, holes, elevation],
+  );
+  return rings
+    .filter((ring) => ring.length > 2)
+    .map((points, index) => (
+      <Line
+        key={index}
+        points={points}
+        color={selected ? "#345f42" : "#697c69"}
+        lineWidth={selected ? 2.5 : 1.6}
+        dashed={boundary}
+        dashSize={0.65}
+        gapSize={0.32}
+        // Palette edits replace the ground material. Draw annotation lines
+        // after opaque surfaces regardless of material creation order.
+        renderOrder={2}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    ));
+}
+
+function SelectableSiteSurface({
+  surface,
+  material,
+  selected,
+  onSelect,
+}: {
+  surface: SiteSurface;
+  material: THREE.Material;
+  selected?: string;
+  onSelect?: (id: string) => void;
+}) {
+  return (
+    <SelectableSiteObject id={surface.id} onSelect={onSelect}>
+      <PlanarSurface
+        polygon={surface.polygon}
+        holes={surface.holes}
+        y={surface.elevation_m}
+        material={material}
+      />
+      {selected === surface.id && (
+        <SiteOutline
+          polygon={surface.polygon}
+          holes={surface.holes}
+          elevation={surface.elevation_m + 0.025}
+        />
+      )}
+    </SelectableSiteObject>
+  );
+}
+
 function SiteModel({
   snap,
   materials,
   cutaway,
   replayKey,
   reduced,
+  selected,
+  onSelect,
 }: {
   snap: RenderSnapshot;
   materials: Palette;
   cutaway: boolean;
   replayKey: number;
   reduced: boolean;
+  selected?: string;
+  onSelect?: (id: string) => void;
 }) {
   const site = snap.site_layout;
   const parts = useMemo(
-    () => (site?.garage ? garageParts(site.garage, cutaway) : []),
+    () =>
+      site?.garage
+        ? garageParts(site.garage, cutaway).map((part) => ({
+            ...part,
+            objectId: site.garage!.id,
+          }))
+        : [],
     [site, cutaway],
   );
   if (!site) return null;
@@ -582,31 +716,31 @@ function SiteModel({
   return (
     <>
       {site.yard && (
-        <PlanarSurface
-          polygon={site.yard.polygon}
-          holes={site.yard.holes}
-          y={site.yard.elevation_m}
+        <SelectableSiteSurface
+          surface={site.yard}
           material={materials.grass}
+          selected={selected}
+          onSelect={onSelect}
         />
       )}
       {site.driveway && (
-        <PlanarSurface
-          polygon={site.driveway.polygon}
-          holes={site.driveway.holes}
-          y={site.driveway.elevation_m}
+        <SelectableSiteSurface
+          surface={site.driveway}
           material={materials.concrete}
+          selected={selected}
+          onSelect={onSelect}
         />
       )}
       {site.pool_deck && (
-        <PlanarSurface
-          polygon={site.pool_deck.polygon}
-          holes={site.pool_deck.holes}
-          y={site.pool_deck.elevation_m}
+        <SelectableSiteSurface
+          surface={site.pool_deck}
           material={materials.stone}
+          selected={selected}
+          onSelect={onSelect}
         />
       )}
       {pool && (
-        <>
+        <SelectableSiteObject id={pool.id ?? "site-pool"} onSelect={onSelect}>
           <PlanarSurface
             polygon={waterPolygon(pool)}
             y={ground - pool.water_depth_m}
@@ -629,7 +763,13 @@ function SiteModel({
               ]}
             />
           </mesh>
-        </>
+          {selected === (pool.id ?? "site-pool") && (
+            <SiteOutline
+              polygon={waterPolygon(pool)}
+              elevation={ground + 0.025}
+            />
+          )}
+        </SelectableSiteObject>
       )}
       {site.garage && (
         <AnimatedLevel
@@ -643,8 +783,22 @@ function SiteModel({
               key={surface}
               parts={parts.filter((part) => part.surface === surface)}
               material={materials[surface]}
+              selected={selected}
+              onSelect={onSelect}
             />
           ))}
+          {selected === site.garage.id && (
+            <SiteOutline
+              polygon={site.garage.polygon}
+              elevation={
+                site.garage.elevation_m +
+                (cutaway
+                  ? Math.min(1.15, site.garage.height_m)
+                  : site.garage.height_m + site.garage.roof_thickness_m) +
+                0.025
+              }
+            />
+          )}
         </AnimatedLevel>
       )}
     </>
@@ -838,7 +992,14 @@ function Scene({
   const materials = usePalette(materialMode === "white", snap.material_palette);
   const active = snap.levels.find((l) => l.name === level) ?? snap.levels[0];
   const showSite = mode !== "cutaway" || active.name === "ground";
-  const bounds = useMemo(() => modelBounds(snap, showSite), [snap, showSite]);
+  const boundary = useMemo(() => projectBoundaryPolygon(snap), [snap]);
+  const bounds = useMemo(
+    () =>
+      showSite && boundary.length
+        ? boundsOf(boundary)
+        : modelBounds(snap, false),
+    [snap, showSite, boundary],
+  );
   const outdoorWater =
     showSite && snap.pool?.location === "outdoor" ? snap.pool : null;
   const orderedLevels = [...snap.levels].sort(
@@ -905,6 +1066,19 @@ function Scene({
         </mesh>
       )}
       <group position={[-bounds.cx, 0, bounds.cy]}>
+        {showSite && boundary.length > 2 && (
+          <SelectableSiteObject id={PROJECT_BOUNDARY_ID} onSelect={onSelect}>
+            <SiteOutline
+              polygon={boundary}
+              elevation={
+                (snap.levels.find((floor) => floor.name === "ground")
+                  ?.elevation_m ?? 0) - 0.35
+              }
+              boundary
+              selected={selected === PROJECT_BOUNDARY_ID}
+            />
+          </SelectableSiteObject>
+        )}
         {showSite && (
           <SiteModel
             snap={snap}
@@ -912,6 +1086,8 @@ function Scene({
             cutaway={mode === "cutaway"}
             replayKey={replayKey}
             reduced={reduced}
+            selected={selected}
+            onSelect={onSelect}
           />
         )}
         {levels.map((floor, index) => {
@@ -1021,6 +1197,10 @@ export default function Villa3D(props: Villa3DProps) {
     [zoomRequest, setZoomRequest] = useState(0);
   const [rearOverride, setRearOverride] = useState<boolean | null>(null);
   const rearView = !!props.snap.site_layout?.yard && (rearOverride ?? true);
+  const active =
+    props.snap.levels.find((floor) => floor.name === props.level) ??
+    props.snap.levels[0];
+  const showSite = props.mode !== "cutaway" || active?.name === "ground";
   // R3F mounts its scene in a separate React root. Wait for our own attached
   // portal instead of letting Drei capture a transient Canvas event target.
   // This also preserves handles when Documents unmounts and remounts the model.
@@ -1100,6 +1280,11 @@ export default function Villa3D(props: Villa3DProps) {
       />
       <div
         className="scene-camera-controls"
+        onPointerDown={(event) => event.stopPropagation()}
+        onPointerUp={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+        onDoubleClick={(event) => event.stopPropagation()}
+        onWheel={(event) => event.stopPropagation()}
         style={{
           position: "absolute",
           right: 18,
@@ -1152,6 +1337,53 @@ export default function Villa3D(props: Villa3DProps) {
           <CameraIcon kind="minus" />
         </button>
       </div>
+      {showSite && (
+        <button
+          type="button"
+          className="scene-boundary-control"
+          aria-label="Inspect project boundary"
+          aria-pressed={props.selected === PROJECT_BOUNDARY_ID}
+          title="Modeled project extent; not a surveyed property boundary"
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onWheel={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            props.onSelect?.(PROJECT_BOUNDARY_ID);
+          }}
+          style={{
+            position: "absolute",
+            bottom: 118,
+            left: 20,
+            zIndex: 4,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "7px 10px",
+            border: "1px dashed #869781",
+            borderRadius: 5,
+            background:
+              props.selected === PROJECT_BOUNDARY_ID ? "#e3ebdb" : "#fafbf5",
+            color: "#3e5b43",
+            fontSize: 11,
+            lineHeight: 1.5,
+          }}
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            aria-hidden="true"
+          >
+            <path d="M1.5 5V1.5H5m6 0h3.5V5m0 6v3.5H11m-6 0H1.5V11" />
+          </svg>
+          Project boundary · Assumed
+        </button>
+      )}
       <div
         className="scene-presentation-note"
         style={{

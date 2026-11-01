@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import type { BuildingSnapshot, Units } from "./lib/types";
 import { area, areaLabel, length } from "./lib/format";
 import { planFrame } from "./lib/plan-frame";
@@ -8,14 +8,19 @@ import {
   rectangleBounds,
   waterPolygon,
 } from "./site-model";
+import { PROJECT_BOUNDARY_ID, projectBoundaryPolygon } from "./site-selection";
 import Icon from "./components/Icon";
 
 export default function SitePlan({
   snap,
   units,
+  selected,
+  onSelect,
 }: {
   snap: BuildingSnapshot;
   units: Units;
+  selected?: string;
+  onSelect?: (id: string) => void;
 }) {
   const [zoom, setZoom] = useState(1),
     [dimensions, setDimensions] = useState(true);
@@ -25,7 +30,8 @@ export default function SitePlan({
     snap.envelope_polygon ??
     snap.architecture?.slabs.find((s) => s.level_id === ground?.id)?.polygon ??
     [];
-  const frame = planFrame([...(site?.context_polygon ?? []), ...footprint]);
+  const boundary = projectBoundaryPolygon(snap);
+  const frame = planFrame([...boundary, ...footprint]);
   const { X, Y, H, scale: S, barMetres } = frame;
   const px = (x: number) => X + x * S,
     py = (y: number) => Y + (H - y) * S;
@@ -33,6 +39,37 @@ export default function SitePlan({
     `M${ring.map((p) => `${px(p[0])},${py(p[1])}`).join("L")}Z`;
   const surfacePath = (surface: { polygon: number[][]; holes: number[][][] }) =>
     [surface.polygon, ...surface.holes].map(ringPath).join(" ");
+  const selectionProps = (id: string, name: string) => ({
+    className: `site-plan-feature${selected === id ? " is-selected" : ""}`,
+    role: onSelect ? ("button" as const) : undefined,
+    tabIndex: onSelect ? 0 : undefined,
+    "aria-label": onSelect ? `${name}. View materials and details` : undefined,
+    "aria-pressed": onSelect ? selected === id : undefined,
+    onClick: onSelect ? () => onSelect(id) : undefined,
+    onKeyDown: onSelect
+      ? (event: KeyboardEvent<SVGGElement>) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onSelect(id);
+          }
+        }
+      : undefined,
+  });
+  const selectionOutline = (id: string, d: string) => (
+    <path
+      className="site-plan-outline"
+      d={d}
+      fill="none"
+      stroke="#315d42"
+      strokeWidth="3"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+      opacity={selected === id ? 1 : 0}
+      pointerEvents="none"
+      aria-hidden="true"
+    />
+  );
   const label = (
     polygon: number[][],
     name: string,
@@ -57,6 +94,7 @@ export default function SitePlan({
         textAnchor="middle"
         fill="#32493c"
         fontSize={font}
+        pointerEvents="none"
       >
         {lines.map((line, i) => (
           <tspan
@@ -85,7 +123,7 @@ export default function SitePlan({
     const dimensionX = side === "left" ? x1 - 14 : x2 + 14;
     const textX = side === "left" ? x1 - 23 : x2 + 23;
     return (
-      <g fill="#536158" stroke="#7b887d" strokeWidth=".65">
+      <g fill="#536158" stroke="#7b887d" strokeWidth=".65" pointerEvents="none">
         <path
           d={`M${x1} ${y}H${x2}M${x1} ${y - 4}v8M${x2} ${y - 4}v8M${dimensionX} ${y1}V${y2}M${dimensionX - 4} ${y1}h8M${dimensionX - 4} ${y2}h8`}
         />
@@ -115,6 +153,7 @@ export default function SitePlan({
   };
   const garage = site?.garage,
     pool = snap.pool?.location === "outdoor" ? snap.pool : null;
+  const poolId = pool?.id ?? "site-pool";
   const yardArea = site?.yard
     ? area(site.yard.polygon) -
       site.yard.holes.reduce((sum, ring) => sum + area(ring), 0)
@@ -129,7 +168,11 @@ export default function SitePlan({
         >
           Dimensions
         </button>
-        <span>Assumed site context · not a surveyed parcel</span>
+        <span>
+          {onSelect
+            ? "Select a site feature to see materials and details"
+            : "Assumed project boundary · not a surveyed parcel"}
+        </span>
       </div>
       <div className="plan-scroll">
         <svg
@@ -140,8 +183,8 @@ export default function SitePlan({
             height: `${zoom * 100}%`,
             minWidth: zoom > 1 ? `${zoom * 600}px` : undefined,
           }}
-          role="img"
-          aria-label={`Site plan with house, ${[site?.yard ? "yard" : null, garage ? "garage" : null, pool ? "outdoor pool" : null].filter(Boolean).join(", ") || "no added site features"}; revision ${snap.revision_number}`}
+          role="group"
+          aria-label={`Site plan with assumed project boundary, house, ${[site?.yard ? "yard" : null, garage ? "garage" : null, pool ? "outdoor pool" : null].filter(Boolean).join(", ") || "no added site features"}; revision ${snap.revision_number}`}
         >
           <rect width="810" height="740" fill="#fcfcf8" />
           <g fontFamily="var(--font-geist-sans),sans-serif">
@@ -152,41 +195,95 @@ export default function SitePlan({
               R{String(snap.revision_number).padStart(2, "0")} ·{" "}
               {snap.revision_id.slice(0, 8)}
             </text>
-            {site && (
-              <path
-                d={ringPath(site.context_polygon)}
-                fill="none"
-                stroke="#c4ccbf"
-                strokeWidth=".7"
-                strokeDasharray="5 5"
-              />
+            {boundary.length >= 3 && (
+              <g
+                {...selectionProps(
+                  PROJECT_BOUNDARY_ID,
+                  "Project boundary, assumed study extent",
+                )}
+              >
+                <path
+                  d={ringPath(boundary)}
+                  fill="none"
+                  stroke="#627c64"
+                  strokeWidth="1.6"
+                  strokeDasharray="9 5"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <path
+                  d={ringPath(boundary)}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth="18"
+                  pointerEvents="stroke"
+                  aria-hidden="true"
+                />
+                {selectionOutline(PROJECT_BOUNDARY_ID, ringPath(boundary))}
+                <text
+                  className="site-plan-boundary-label"
+                  x={(frame.left + frame.right) / 2}
+                  y={frame.top + 17}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="500"
+                  fill="#3d5b44"
+                  paintOrder="stroke"
+                  stroke="#fcfcf8"
+                  strokeWidth="5"
+                  strokeLinejoin="round"
+                >
+                  Project boundary · Assumed
+                </text>
+              </g>
             )}
             {site?.yard && (
-              <path
-                d={surfacePath(site.yard)}
-                fill="#e2ead8"
-                fillRule="evenodd"
-                stroke="#8b9e7a"
-                strokeWidth="1"
-              />
+              <g {...selectionProps(site.yard.id, site.yard.name || "Yard")}>
+                <path
+                  d={surfacePath(site.yard)}
+                  fill="#e2ead8"
+                  fillRule="evenodd"
+                  stroke="#8b9e7a"
+                  strokeWidth="1"
+                />
+                {selectionOutline(site.yard.id, surfacePath(site.yard))}
+              </g>
             )}
             {site?.driveway && (
-              <path
-                d={surfacePath(site.driveway)}
-                fill="#e5e3da"
-                fillRule="evenodd"
-                stroke="#abae9f"
-                strokeWidth=".8"
-              />
+              <g
+                {...selectionProps(
+                  site.driveway.id,
+                  site.driveway.name || "Driveway",
+                )}
+              >
+                <path
+                  d={surfacePath(site.driveway)}
+                  fill="#e5e3da"
+                  fillRule="evenodd"
+                  stroke="#abae9f"
+                  strokeWidth=".8"
+                />
+                {selectionOutline(site.driveway.id, surfacePath(site.driveway))}
+              </g>
             )}
             {site?.pool_deck && (
-              <path
-                d={surfacePath(site.pool_deck)}
-                fill="#f0e9d9"
-                fillRule="evenodd"
-                stroke="#bbb29d"
-                strokeWidth=".8"
-              />
+              <g
+                {...selectionProps(
+                  site.pool_deck.id,
+                  site.pool_deck.name || "Pool deck",
+                )}
+              >
+                <path
+                  d={surfacePath(site.pool_deck)}
+                  fill="#f0e9d9"
+                  fillRule="evenodd"
+                  stroke="#bbb29d"
+                  strokeWidth=".8"
+                />
+                {selectionOutline(
+                  site.pool_deck.id,
+                  surfacePath(site.pool_deck),
+                )}
+              </g>
             )}
             <path
               d={ringPath(footprint)}
@@ -206,7 +303,7 @@ export default function SitePlan({
                 garage?.side === "left" ? "right" : "left",
               )}
             {garage && (
-              <g>
+              <g {...selectionProps(garage.id, garage.name || "Garage")}>
                 <path
                   d={ringPath(garage.polygon)}
                   fill="#edece4"
@@ -232,12 +329,13 @@ export default function SitePlan({
                   areaLabel(area(garage.polygon), units),
                   "Detached",
                 ])}
+                {selectionOutline(garage.id, ringPath(garage.polygon))}
                 {dimensions && dimension(garage.polygon)}
               </g>
             )}
             {site?.driveway && label(site.driveway.polygon, "DRIVEWAY")}
             {pool && (
-              <g>
+              <g {...selectionProps(poolId, "Outdoor pool")}>
                 <path
                   d={ringPath(waterPolygon(pool))}
                   fill="#c8e3dd"
@@ -249,6 +347,7 @@ export default function SitePlan({
                   "OUTDOOR POOL",
                   `${length(pool.water_length_m, units)} × ${length(pool.water_width_m, units)}`,
                 )}
+                {selectionOutline(poolId, ringPath(waterPolygon(pool)))}
               </g>
             )}
             {site?.yard &&
@@ -262,6 +361,7 @@ export default function SitePlan({
                       textAnchor="middle"
                       fontSize="10"
                       fill="#496440"
+                      pointerEvents="none"
                     >
                       YARD · {areaLabel(yardArea, units)} net landscape
                     </text>
@@ -274,8 +374,8 @@ export default function SitePlan({
               N*
             </text>
             <text x="40" y="625" fontSize="8.5" fill="#687566">
-              * Assumed orientation. Dashed extent is study context, not a legal
-              boundary.
+              * Assumed orientation and project boundary. No surveyed property
+              boundary is supplied.
             </text>
             <path
               d={`M85 650h${barMetres * S}M85 645v10m${(barMetres * S) / 2}-10v10m${(barMetres * S) / 2}-10v10`}

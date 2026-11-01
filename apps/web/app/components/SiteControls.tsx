@@ -10,6 +10,8 @@ type Props = {
   units: Units;
   disabled: boolean;
   error: string;
+  selected?: string;
+  onSelect?: (id: string) => void;
   onCommand: (commands: Record<string, unknown>[], label: string) => void;
   onPlan: () => void;
 };
@@ -18,6 +20,8 @@ export default function SiteControls({
   units,
   disabled,
   error,
+  selected,
+  onSelect,
   onCommand,
   onPlan,
 }: Props) {
@@ -27,14 +31,23 @@ export default function SiteControls({
   const yardBox = yard ? rectangleBounds(yard.polygon) : null,
     garageBox = garage ? rectangleBounds(garage.polygon) : null;
   const [yardWidth, setYardWidth] = useState(
-    String(yardBox?.width ?? snap.building_program?.width_m ?? 18),
+    String(
+      Number(
+        (yardBox?.width ?? snap.building_program?.width_m ?? 18).toFixed(6),
+      ),
+    ),
   );
-  const [yardDepth, setYardDepth] = useState(String(yardBox?.depth ?? 8));
+  const [yardDepth, setYardDepth] = useState(
+    String(Number((yardBox?.depth ?? 8).toFixed(6))),
+  );
   const [garageWidth, setGarageWidth] = useState(
-    String(garageBox?.width ?? 3.6),
+    String(Number((garageBox?.width ?? 3.6).toFixed(6))),
   );
-  const [garageDepth, setGarageDepth] = useState(String(garageBox?.depth ?? 6));
+  const [garageDepth, setGarageDepth] = useState(
+    String(Number((garageBox?.depth ?? 6).toFixed(6))),
+  );
   const [garageSide, setGarageSide] = useState(garage?.side ?? "right");
+  const [expanded, setExpanded] = useState(selected ?? "");
   const outdoor = snap.pool?.location === "outdoor";
   return (
     <section className="edit-block site-controls" aria-label="Yard and garage">
@@ -46,8 +59,14 @@ export default function SiteControls({
         </p>
       )}
       {yard ? (
-        <details>
-          <summary>
+        <details open={expanded === yard.id}>
+          <summary
+            onClick={(event) => {
+              event.preventDefault();
+              setExpanded(expanded === yard.id ? "" : yard.id);
+              onSelect?.(yard.id);
+            }}
+          >
             Yard{" "}
             <span>
               {areaLabel(
@@ -140,8 +159,14 @@ export default function SiteControls({
         </button>
       )}
       {garage ? (
-        <details>
-          <summary>
+        <details open={expanded === garage.id}>
+          <summary
+            onClick={(event) => {
+              event.preventDefault();
+              setExpanded(expanded === garage.id ? "" : garage.id);
+              onSelect?.(garage.id);
+            }}
+          >
             Detached garage{" "}
             <span>{areaLabel(area(garage.polygon), units)}</span>
           </summary>

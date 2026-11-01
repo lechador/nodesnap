@@ -72,6 +72,7 @@ export interface RenderSnapshot {
   site_layout?: SiteGeometry | null;
   material_palette?: "limestone_oak" | "warm_concrete" | "white_stucco";
   pool?: {
+    id?: string;
     location?: "indoor" | "outdoor";
     level_id: string;
     origin_x_m: number;

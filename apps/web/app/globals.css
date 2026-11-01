@@ -2822,3 +2822,139 @@ strong {
     border-radius: 4px;
   }
 }
+
+/* Shared object selection across the model, site drawing and inspector. */
+.site-object-picker {
+  position: absolute;
+  z-index: 6;
+  top: 94px;
+  left: 28px;
+  right: 28px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 3px 2px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.site-object-picker button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.site-object-picker button:hover {
+  background: var(--accent-light);
+  color: var(--ink);
+}
+.site-object-picker button[aria-pressed="true"] {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.site-interactive .plan-workspace {
+  padding-top: 146px;
+}
+.site-plan-feature {
+  cursor: pointer;
+  outline: none;
+}
+.site-plan-feature .site-plan-outline {
+  opacity: 0;
+}
+.site-plan-feature.is-selected .site-plan-outline,
+.site-plan-feature:hover .site-plan-outline,
+.site-plan-feature:focus-visible .site-plan-outline {
+  opacity: 1;
+}
+.site-plan-feature:focus-visible .site-plan-outline {
+  stroke-width: 3;
+}
+.site-plan-feature:focus-visible .site-plan-boundary-label {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+.inspector-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: -8px 0 16px;
+  padding: 0;
+  color: var(--accent);
+  font-size: 11px;
+}
+.inspector-back svg {
+  transform: rotate(180deg);
+}
+.site-inspector h3,
+.site-inspector summary {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.site-inspector-materials {
+  margin: 0 0 26px;
+}
+.site-inspector-note {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.site-inspector .property > span {
+  flex: 1;
+  min-width: 0;
+}
+.site-inspector .property strong {
+  max-width: 62%;
+  overflow-wrap: anywhere;
+}
+.site-inspector-details,
+.site-inspector-basis {
+  margin: 20px 0;
+  border-top: 1px solid var(--line);
+}
+.site-inspector summary {
+  padding: 12px 0;
+  cursor: pointer;
+}
+.site-inspector summary:hover {
+  color: var(--accent);
+}
+.site-inspector-details > .properties,
+.site-inspector-basis > .properties {
+  margin-bottom: 14px;
+}
+@media (max-width: 760px) {
+  .site-object-picker {
+    top: 121px;
+    left: 16px;
+    right: 16px;
+  }
+  .site-object-picker button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+  .site-interactive .plan-workspace {
+    padding-top: 180px;
+  }
+  .site-inspector-note {
+    font-size: 12px;
+  }
+  .inspector-back {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .site-inspector summary {
+    min-height: 44px;
+  }
+}

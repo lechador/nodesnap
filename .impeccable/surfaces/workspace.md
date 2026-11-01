@@ -22,3 +22,5 @@ The user pinned architecture/chat priority and direct implementation; the master
 
 ## Private-home site extension
 A dedicated Site plan and the Yard & garage inspector bring outdoor space into the existing studio. Canonical lawn, driveway, pool/deck and detached garage geometry appear in 3D, exact measured plans and exports. Yard views frame the backyard first; front/back switching preserves orientation control. No surveyed parcel, road connection, compliant setback or engineering capacity is implied. Mobile keeps dimensions editable and shows rejected-size explanations beside controls.
+
+A dashed assumed project boundary encloses all modeled features. Direct surface selection and a compact object selector open revision-specific material and quantity details; green outlines preserve surface openings. The yard reports usable grass separately from its gross extent, and the garage distinguishes clear floor area, footprint, door and assembly dimensions. Mobile site selection opens Details with heading focus. Finishes remain illustrative; the border remains a study extent.

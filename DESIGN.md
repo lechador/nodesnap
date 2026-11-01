@@ -270,6 +270,10 @@ A Site plan tab exposes the same saved yard, garage, driveway, pool and deck geo
 
 The Design details panel adds Yard & garage controls: explicit additions, expandable dimensions, side selection, removal and pool relocation. Validation errors remain visible on mobile, and successful changes go through the normal immutable-revision controller. Drawings label their assumed context and keep yard/deck/water areas separate from enclosed and conditioned areas. Existing tokens, focus treatment and reduced-motion behavior carry forward.
 
+The entire modeled project has a dashed **Project boundary · Assumed** outline in 3D and Site plan. It consumes the saved study extent when available and fits the camera around the house and outdoor features. It is not a surveyed property line or a physical fence. A compact, horizontally scrollable object selector makes the boundary and each outdoor feature available without precise pointer targeting.
+
+Yard, garage, driveway, pool deck and outdoor water share canonical selection IDs across both views and the contextual inspector. Selection rings preserve openings and keep the underlying materials visible. The inspector leads with actual illustrative material choices, then dimensions and quantities; construction dimensions and source details expand separately. Surviving selections follow revisions; removed selections clear. Site selection opens Details and focuses its heading on mobile. SVG objects support Enter/Space, and orbit drags do not trigger picking. The garage's finish palette remains a project-wide choice, explicitly labeled as such.
+
 ### Feedback, document surfaces and quantities
 
 Statuses appear as compact text tags with green or warning tints, accompanied by explicit result and scope text. Document content uses a square paper cover, restrained shadow, revision label, coverage rows and an actual embedded PDF. Property and quantity rows use fine dividers, aligned labels and tabular values; narrow layouts can wrap long values.

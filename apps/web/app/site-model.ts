@@ -22,6 +22,7 @@ export interface GarageGeometry {
   vehicle_door_height_m: number;
   vehicle_door_start: number[];
   vehicle_door_end: number[];
+  side?: "left" | "right";
 }
 export interface SiteGeometry {
   revision_id: string;
