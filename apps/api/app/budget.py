@@ -35,13 +35,18 @@ def reserve(factory, amount: int):
             raise HTTPException(429, {"code": "BUDGET_CEILING", "message": "The Meta spending ceiling has been reserved or reached. Direct editing, calculations and exports are still available."})
 
 
-def settle(factory, reservation: int, kind: str, model: str, usage: dict | None, audio_ms: int = 0):
+def settle(factory, reservation: int, kind: str, model: str, usage: dict | None, audio_ms: int = 0, *, billing_rejected: bool = False):
     reported = usage is not None or audio_ms > 0
     usage = usage or {}
     inp = max(0, int(usage.get("input_tokens", 0) or 0))
     cached = min(inp, max(0, int((usage.get("input_tokens_details") or {}).get("cached_tokens", 0) or 0)))
     output = max(0, int(usage.get("output_tokens", 0) or 0))
-    if kind == "transcription" and reported:
+    if billing_rejected:
+        # An HTTP 402 rejects work before acceptance; unlike a timeout its cost
+        # is known to be zero. Keep an explicit receipt, without inventing usage.
+        inp = cached = output = audio_ms = 0
+        cost = 0
+    elif kind == "transcription" and reported:
         cost = math.ceil(audio_ms / 1000) * .18 / 3600 * 1_000_000
     elif reported:
         rates = RATES[model]
@@ -52,7 +57,8 @@ def settle(factory, reservation: int, kind: str, model: str, usage: dict | None,
         db.execute(update(BudgetRow).where(BudgetRow.id == "application").values(
             reserved_microusd=BudgetRow.reserved_microusd - reservation,
             spent_microusd=BudgetRow.spent_microusd + round(cost)))
-        db.add(MetaUsageRow(id=new_id(), created_at=now(), kind=kind if reported else f"{kind}_unknown_cost",
+        receipt_kind = f"{kind}_billing_rejected" if billing_rejected else (kind if reported else f"{kind}_unknown_cost")
+        db.add(MetaUsageRow(id=new_id(), created_at=now(), kind=receipt_kind,
                             model=model, input_tokens=inp, cached_tokens=cached, output_tokens=output,
                             audio_ms=audio_ms, est_cost_usd=f"{cost / 1_000_000:.6f}"))
 

@@ -176,7 +176,8 @@ async def planned_building(factory, text, history=None, context=""):
                 "current_design": context, "planning_feedback": feedback, "previous_program": previous_program})
             output = await propose_design(text, history, planning_context)
         finally:
-            budget.settle(factory, 1_000_000, "building_design", status["reasoning_model"], output.get("usage"))
+            budget.settle(factory, 1_000_000, "building_design", status["reasoning_model"], output.get("usage"),
+                          billing_rejected=(output.get("issue") or {}).get("code") == "PROVIDER_BILLING_REQUIRED")
         proposal = output.get("proposal")
         if not proposal:
             if output.get("issue", {}).get("code") != "MALFORMED_OUTPUT":
@@ -847,7 +848,8 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
                     try:
                         output = await propose(body.text + feedback, context)
                     finally:
-                        budget.settle(factory, 500_000, "conversation", status["reasoning_model"], output.get("usage"))
+                        budget.settle(factory, 500_000, "conversation", status["reasoning_model"], output.get("usage"),
+                                      billing_rejected=(output.get("issue") or {}).get("code") == "PROVIDER_BILLING_REQUIRED")
                     if output.get("proposal") or output.get("issue", {}).get("code") != "MALFORMED_OUTPUT":
                         break
                     feedback = "\nController feedback: return exactly the schema-constrained proposal; the previous response could not be validated."
@@ -949,7 +951,8 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
         try:
             output = await transcribe(data)
         finally:
-            budget.settle(factory, reservation, "transcription", status["transcription_model"], {} if output.get("execution_status") == "completed" else None, round(duration * 1000) if output.get("execution_status") == "completed" else 0)
+            budget.settle(factory, reservation, "transcription", status["transcription_model"], {} if output.get("execution_status") == "completed" else None, round(duration * 1000) if output.get("execution_status") == "completed" else 0,
+                          billing_rejected=(output.get("issue") or {}).get("code") == "PROVIDER_BILLING_REQUIRED")
         return envelope(output, request)
 
     return app

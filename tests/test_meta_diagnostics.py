@@ -1,10 +1,13 @@
 """Upstream failures are diagnosable without exposing credentials or brief data."""
 import asyncio
+import io
 import json
 import logging
+import wave
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
 
 from app import meta
 
@@ -125,3 +128,72 @@ def test_nested_error_data_is_not_serialized(provider, caplog):
     assert "provider_message" not in logged
     assert "provider_code" not in logged
     assert "private" not in caplog.text
+
+
+@pytest.mark.parametrize("kind", ["building_design", "conversation", "transcription"])
+def test_billing_rejection_blocks_without_spend_and_preserves_prior_unknown_receipt(provider, tmp_path, kind):
+    from app import budget, main
+    from app.database import BudgetRow, MetaUsageRow
+
+    calls = []
+    def handle(req):
+        if req.url.path.endswith("/models"):
+            return httpx.Response(200, json={"data": [{"id": "muse-wonder-1.0"}, {"id": "muse-voice-transcribe-1.0"}]})
+        calls.append(req.url.path)
+        return httpx.Response(402, json={"error": {"code": "billing_not_configured", "type": "billing_error",
+            "message": "Private team needs billing attention: https://billing.example/private-team-id"}})
+    provider(handle)
+    application = main.create_app(f"sqlite:///{tmp_path / 'billing.db'}", tmp_path / "artifacts")
+    factory = application.state.session_factory
+    budget.reserve(factory, 250_000)
+    budget.settle(factory, 250_000, "building_design", "muse-wonder-1.0", None)
+    with factory() as db:
+        old = db.query(MetaUsageRow).one()
+        old_id, old_json = old.id, {column.name: getattr(old, column.name) for column in old.__table__.columns}
+    with TestClient(application) as client:
+        client.post("/api/v1/demo/sessions")
+        headers = {"Idempotency-Key": "one-billing-rejection"}
+        if kind == "building_design":
+            path, kwargs = "/api/v1/designs", {"json": {"text": "Design a private house with a yard"}, "headers": headers}
+        elif kind == "conversation":
+            project = client.post("/api/v1/projects", json={"seed": True}).json()["data"]
+            path = f"/api/v1/projects/{project['project_id']}/conversations"
+            kwargs = {"json": {"text": "Add a yard", "base_revision_id": project["revision_id"]},
+                      "headers": {**headers, "If-Match": project["revision_id"]}}
+        else:
+            recording = io.BytesIO()
+            with wave.open(recording, "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(16000)
+                wav.writeframes(b"\x00\x00" * 16000)
+            path, kwargs = "/api/v1/transcriptions", {"files": {"audio": ("recording.wav", recording.getvalue(), "audio/wav")}}
+        reply = client.post(path, **kwargs)
+        assert reply.status_code == 200, reply.text
+        result = reply.json()["data"]
+        assert result["execution_status"] == "blocked"
+        assert result["issue"]["code"] == "PROVIDER_BILLING_REQUIRED"
+        assert "Meta account needs billing attention" in result["issue"]["message"]
+        assert "direct edits and exports are still available" in result["issue"]["message"]
+        for private in ("private-team-id", "billing.example", "billing_not_configured", "billing_error"):
+            assert private not in reply.text
+        if kind != "transcription":
+            assert client.post(path, **kwargs).json()["data"] == result
+        assert len(calls) == 1
+        projects = client.get("/api/v1/projects").json()["data"]
+        if kind == "conversation":
+            assert len(projects) == 1
+            assert projects[0]["revision_id"] == project["revision_id"]
+        else:
+            assert projects == []
+    with factory() as db:
+        balance = db.get(BudgetRow, "application")
+        assert balance.reserved_microusd == 0
+        assert balance.spent_microusd == 250_000
+        old = db.get(MetaUsageRow, old_id)
+        assert {column.name: getattr(old, column.name) for column in old.__table__.columns} == old_json
+        receipt = db.query(MetaUsageRow).filter(MetaUsageRow.id != old_id).one()
+        assert receipt.kind == f"{kind}_billing_rejected"
+        assert receipt.est_cost_usd == "0.000000"
+        assert receipt.input_tokens == receipt.output_tokens == receipt.audio_ms == 0
+    application.state.engine.dispose()

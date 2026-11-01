@@ -18,6 +18,14 @@ _verified: dict[str, tuple[float, set[str]]] = {}
 _logger = logging.getLogger(__name__)
 
 
+def _billing_rejection(exc: Exception) -> dict | None:
+    if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 402:
+        return {"execution_status": "blocked", "issue": {"code": "PROVIDER_BILLING_REQUIRED", "message":
+            "This studio's Meta account needs billing attention before AI design and voice can continue. "
+            "Your existing buildings, direct edits and exports are still available."}}
+    return None
+
+
 def _safe_diagnostic(value, limit: int = 480) -> str | None:
     """Keep useful schema errors, without logging credentials or whole objects."""
     if not isinstance(value, (str, int, float)):
@@ -112,6 +120,8 @@ async def response(payload: dict) -> dict:
         return {"execution_status": "error", "issue": {"code": "PROVIDER_TIMEOUT", "message": "Meta took too long to respond. Your design has not changed; try again."}}
     except (httpx.HTTPError, ValueError, KeyError) as exc:
         _log_provider_failure(stage, exc, result)
+        if rejected := _billing_rejection(exc):
+            return rejected
         return {"execution_status": "error", "issue": {"code": "PROVIDER_ERROR", "message": "The Meta connection could not complete this request. Your design is preserved."}}
 
 
@@ -134,4 +144,6 @@ async def transcribe(data: bytes) -> dict:
             return {"execution_status": "completed", "model": status["transcription_model"], "text": raw["transcript"], "audio_duration_ms": raw.get("audioDurationMs"), "session_id": raw.get("sessionId")}
     except (httpx.HTTPError, ValueError, KeyError) as exc:
         _log_provider_failure(stage, exc, result)
+        if rejected := _billing_rejection(exc):
+            return {**rejected, "text": None}
         return {"execution_status": "error", "text": None, "issue": {"code": "PROVIDER_ERROR", "message": "Transcription was unavailable. Type your request or record it again."}}
