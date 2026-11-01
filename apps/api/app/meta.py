@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
+import re
 import time
 
 import httpx
@@ -13,6 +15,44 @@ REASONING_MODELS = {"muse-wonder-1.0", "muse-spark-1.3"}
 TRANSCRIPTION_MODELS = {"muse-voice-transcribe-1.0"}
 ALLOWED = REASONING_MODELS | TRANSCRIPTION_MODELS
 _verified: dict[str, tuple[float, set[str]]] = {}
+_logger = logging.getLogger(__name__)
+
+
+def _safe_diagnostic(value, limit: int = 480) -> str | None:
+    """Keep useful schema errors, without logging credentials or whole objects."""
+    if not isinstance(value, (str, int, float)):
+        return None
+    text = str(value)
+    key = os.environ.get("META_API_KEY", "")
+    if key:
+        text = text.replace(key, "[REDACTED]")
+    text = re.sub(r"(?i)\b(?:bearer|basic)\s+\S+", "[REDACTED_AUTH]", text)
+    text = re.sub(r"(?i)\b(?:api[_-]?key|authorization|access[_-]?token|secret|password|token)\b[\"']?\s*[:=]\s*[\"']?[^\s\"',;}]+", "[REDACTED_CREDENTIAL]", text)
+    text = re.sub(r"\b(?:LLM_|sk-|gh[pousr]_)[A-Za-z0-9_-]+", "[REDACTED_KEY]", text)
+    text = re.sub(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", "[REDACTED_TOKEN]", text)
+    text = re.sub(r"\b[0-9a-fA-F]{32,}\b", "[REDACTED_TOKEN]", text)
+    return " ".join(text.split())[:limit]
+
+
+def _log_provider_failure(stage: str, exc: Exception, result: httpx.Response | None = None):
+    """Server-only, allowlisted diagnostics; never log request data or headers."""
+    upstream = exc.response if isinstance(exc, httpx.HTTPStatusError) else result
+    diagnostic = {"stage": stage, "exception": type(exc).__name__}
+    if upstream is not None:
+        diagnostic["http_status"] = upstream.status_code
+        diagnostic["request_id"] = _safe_diagnostic(upstream.headers.get("x-request-id"), 160)
+        try:
+            body = upstream.json()
+        except ValueError:
+            body = None
+        error = body.get("error") if isinstance(body, dict) else None
+        if isinstance(error, dict):
+            for field in ("code", "type", "param", "message"):
+                value = _safe_diagnostic(error.get(field), 480 if field == "message" else 160)
+                if value is not None:
+                    diagnostic[f"provider_{field}"] = value
+    # Exception text can contain URLs, request bodies or credentials. Do not log it.
+    _logger.warning("Meta request failed: %s", json.dumps(diagnostic, ensure_ascii=True))
 
 
 def meta_status() -> dict:
@@ -41,6 +81,8 @@ async def verify_access(client: httpx.AsyncClient, model: str):
         response = await client.get(f"{BASE}/models", headers=headers())
         response.raise_for_status()
         body = response.json()
+        if not isinstance(body, dict):
+            raise ValueError("Invalid Meta model list envelope")
         models = {item["id"] for item in body.get("data", body.get("models", [])) if isinstance(item, dict) and "id" in item}
         _verified[key_id] = (time.monotonic(), models)
     if model not in _verified[key_id][1]:
@@ -53,18 +95,23 @@ async def response(payload: dict) -> dict:
         return {"execution_status": "blocked", "issue": status["issue"]}
     if payload.get("model") not in REASONING_MODELS:
         return {"execution_status": "blocked", "issue": {"code": "UNSUPPORTED", "message": "This reasoning model is not permitted."}}
+    stage = "model_lookup"
+    result = None
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15), follow_redirects=False) as client:
             await verify_access(client, payload["model"])
+            stage = "responses"
             result = await client.post(f"{BASE}/responses", headers=headers(), json=payload)
             result.raise_for_status()
             raw = result.json()
             if not isinstance(raw, dict):
                 raise ValueError("Invalid Meta response envelope")
             return {"execution_status": "completed", "model": payload["model"], "request_id": result.headers.get("x-request-id"), "raw": raw, "usage": raw.get("usage")}
-    except httpx.TimeoutException:
+    except httpx.TimeoutException as exc:
+        _log_provider_failure(stage, exc, result)
         return {"execution_status": "error", "issue": {"code": "PROVIDER_TIMEOUT", "message": "Meta took too long to respond. Your design has not changed; try again."}}
-    except (httpx.HTTPError, ValueError, KeyError):
+    except (httpx.HTTPError, ValueError, KeyError) as exc:
+        _log_provider_failure(stage, exc, result)
         return {"execution_status": "error", "issue": {"code": "PROVIDER_ERROR", "message": "The Meta connection could not complete this request. Your design is preserved."}}
 
 
@@ -73,14 +120,18 @@ async def transcribe(data: bytes) -> dict:
     if not status["configured"]:
         return {"execution_status": "blocked", "issue": status["issue"], "text": None}
     files = {"request": (None, json.dumps({"model": status["transcription_model"], "audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}), "application/json"), "audio": ("recording.wav", data, "audio/wav")}
+    stage = "model_lookup"
+    result = None
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15), follow_redirects=False) as client:
             await verify_access(client, status["transcription_model"])
+            stage = "transcription"
             result = await client.post(f"{BASE}/asr/transcribe", headers=headers(), files=files)
             result.raise_for_status()
             raw = result.json()
-            if not isinstance(raw.get("transcript"), str):
+            if not isinstance(raw, dict) or not isinstance(raw.get("transcript"), str):
                 raise ValueError("Missing transcript")
             return {"execution_status": "completed", "model": status["transcription_model"], "text": raw["transcript"], "audio_duration_ms": raw.get("audioDurationMs"), "session_id": raw.get("sessionId")}
-    except (httpx.HTTPError, ValueError, KeyError):
+    except (httpx.HTTPError, ValueError, KeyError) as exc:
+        _log_provider_failure(stage, exc, result)
         return {"execution_status": "error", "text": None, "issue": {"code": "PROVIDER_ERROR", "message": "Transcription was unavailable. Type your request or record it again."}}
