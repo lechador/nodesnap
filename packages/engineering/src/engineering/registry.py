@@ -59,13 +59,27 @@ METHODS: list[EngineeringMethod] = [
         source="Uniform average-pressure scenario over the footprint with an explicitly assumed allowable bearing input (spec E6).",
         exclusions="Settlement, uplift, reinforcement, excavation support; no geotechnical evidence in demo."),
     EngineeringMethod(
-        id="services_inventories", version="0.2.0", discipline="hvac/plumbing/electrical/energy/drainage",
+        id="services_inventories", version="0.3.0", discipline="hvac/plumbing/electrical/energy/drainage",
         purpose="Fixture/equipment inventories with transparent component quantities: envelope conduction U*A*dT, connected electrical load, fixture-flow sums, roof runoff scenario.",
         method_state=MethodState.IMPLEMENTED,
-        source="Spec E8-E12 component definitions with explicit demonstration U/temperature/rainfall/equipment inputs; canonical walls/openings/slabs/clear areas. Independent component and geometry fixtures: tests/test_m4_services.py and tests/test_services_geometry.py.",
-        exclusions="Code sizing, actual equipment selection, below-grade wall/soil coupling, slab-edge thermal bridges, solar/infiltration/latent loads, drain routing/capacity, ventilation, energy pathway and pool environment remain unresolved."),
+        source="Spec E8-E12 component definitions with explicit demonstration U/temperature/rainfall/equipment inputs; canonical walls/openings/slabs/clear areas and detached-garage roof polygon. Independent component and geometry fixtures: tests/test_m4_services.py, tests/test_services_geometry.py and tests/test_site_feature_outputs.py.",
+        exclusions="Code sizing, actual equipment selection, detached-garage conditioning/services, yard/paving runoff, below-grade wall/soil coupling, slab-edge thermal bridges, solar/infiltration/latent loads, drain routing/capacity, ventilation, energy pathway and pool environment remain unresolved."),
 ]
 
 
 def get_method(method_id: str) -> EngineeringMethod | None:
     return next((m for m in METHODS if m.id == method_id), None)
+
+
+def methods_for_snapshot(snapshot) -> list[EngineeringMethod]:
+    """Describe the actual pool domain without mutating the global registry.
+
+    No outdoor evaporation method or coefficient has been adopted. Declaring
+    that gap is distinct from applying indoor dehumidification to an open pool.
+    """
+    outdoor = snapshot.pool is not None and getattr(snapshot.pool, "location", "indoor") == "outdoor"
+    return [method.model_copy(update={
+        "purpose": "Outdoor-pool evaporation and heat balance (not implemented); indoor dehumidification is not applicable.",
+        "source": "No outdoor-pool method has been sourced or independently verified. The indoor ASHRAE pool-environment method is outside this modeled domain.",
+        "exclusions": "Wind, solar, cover/use and water/air conditions remain unresolved. No outdoor evaporation, heating or indoor dehumidification output is calculated.",
+    }) if outdoor and method.id == "pool_environment" else method for method in METHODS]

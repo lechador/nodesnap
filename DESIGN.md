@@ -264,6 +264,12 @@ For a selected living floor other than Ground, the inspector includes a **Buildi
 
 Room selection shares a stable entity ID between model, plan, room list and inspector. It opens the Design inspector tab, restores its scroll position to the top and selects the object's floor. Plan polygons support Enter/Space selection, show a green-tinted fill and stronger stroke, and provide a selected-object drag preview before the typed move command is committed. Room rows use the selected colors above; exact area and dimensions remain in the inspector. The 3D renderer uses its own physically shaded green selection materials rather than substituting UI swatch values directly.
 
+### Private-home site features
+
+A Site plan tab exposes the same saved yard, garage, driveway, pool and deck geometry used by 3D and the C-101 PDF. Grass is confined to the modeled yard, excluding pool/deck holes; materials remain illustrative. Detached garages use canonical walls, roof, slab and vehicle-door dimensions. The initial camera shows the backyard when present, with a front/back camera control and normal orbit access. Indoor floor plans do not draw outdoor pools.
+
+The Design details panel adds Yard & garage controls: explicit additions, expandable dimensions, side selection, removal and pool relocation. Validation errors remain visible on mobile, and successful changes go through the normal immutable-revision controller. Drawings label their assumed context and keep yard/deck/water areas separate from enclosed and conditioned areas. Existing tokens, focus treatment and reduced-motion behavior carry forward.
+
 ### Feedback, document surfaces and quantities
 
 Statuses appear as compact text tags with green or warning tints, accompanied by explicit result and scope text. Document content uses a square paper cover, restrained shadow, revision label, coverage rows and an actual embedded PDF. Property and quantity rows use fine dividers, aligned labels and tabular values; narrow layouts can wrap long values.

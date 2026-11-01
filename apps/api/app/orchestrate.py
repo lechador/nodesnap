@@ -6,14 +6,50 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from domain.models import BuildingProgram
+from domain.models import BuildingProgram, GarageProgram, PoolProgram, YardProgram
 
 from .meta import meta_status, response
 
 
+def strict_schema(schema: dict) -> dict:
+    """Meta's strict schema requires every nested property, including nullable ones."""
+    if isinstance(schema, dict):
+        schema = {key: strict_schema(value) for key, value in schema.items() if key != "default"}
+        if isinstance(schema.get("title"), str):
+            schema.pop("title")
+        if schema.get("type") == "object":
+            schema["required"] = list(schema.get("properties", {}))
+            schema["additionalProperties"] = False
+    elif isinstance(schema, list):
+        schema = [strict_schema(value) for value in schema]
+    return schema
+
+
+class SiteEdit(BaseModel):
+    """One typed feature change; a null matching payload explicitly removes it."""
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    type: Literal["set_yard", "set_garage", "set_outdoor_pool"]
+    yard: YardProgram | None = None
+    garage: GarageProgram | None = None
+    pool: PoolProgram | None = None
+
+    @model_validator(mode="after")
+    def matching_feature(self):
+        matching = {"set_yard": "yard", "set_garage": "garage", "set_outdoor_pool": "pool"}[self.type]
+        if matching not in self.model_fields_set:
+            raise ValueError("Explicitly provide the matching feature, or null to remove it.")
+        if any(getattr(self, name) is not None for name in ("yard", "garage", "pool") if name != matching):
+            raise ValueError("Each site edit changes only its named feature.")
+        if self.type == "set_outdoor_pool" and self.pool is not None:
+            if self.pool.location != "outdoor" or self.pool.level != "ground":
+                raise ValueError("Outdoor pools must use location=outdoor and level=ground.")
+        return self
+
+
 class Proposal(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
-    intent: Literal["design_building", "add_level", "remove_level", "set_pool_dimensions", "regenerate_floor", "set_terrace_area", "set_level_height", "set_material_palette", "explain", "unsupported"]
+    intent: Literal["design_building", "set_site_features", "add_level", "remove_level", "set_pool_dimensions", "regenerate_floor", "set_terrace_area", "set_level_height", "set_material_palette", "explain", "unsupported"]
+    site_edits: list[SiteEdit] | None = Field(default=None, min_length=1, max_length=3)
     pool_length_m: float | None = None
     pool_width_m: float | None = None
     pool_depth_m: float | None = None
@@ -27,6 +63,13 @@ class Proposal(BaseModel):
 
     @model_validator(mode="after")
     def valid_intent(self):
+        if self.intent == "set_site_features":
+            if not self.site_edits:
+                raise ValueError("Name at least one yard, garage or outdoor-pool change.")
+            if len({edit.type for edit in self.site_edits}) != len(self.site_edits):
+                raise ValueError("Change each site feature at most once per request.")
+        elif self.site_edits is not None:
+            raise ValueError("Site changes use the set_site_features action.")
         numeric = (self.pool_length_m, self.pool_width_m, self.pool_depth_m, self.room_target_area_ft2, self.terrace_area_m2, self.level_height_m)
         if any(value is not None and value <= 0 for value in numeric):
             raise ValueError("Dimensions and areas must be positive.")
@@ -41,11 +84,7 @@ class Proposal(BaseModel):
 
 
 # Meta's strict object subset requires every property, with nullable optionals.
-PROPOSAL_SCHEMA = Proposal.model_json_schema()
-PROPOSAL_SCHEMA["required"] = list(PROPOSAL_SCHEMA["properties"])
-for prop in PROPOSAL_SCHEMA["properties"].values():
-    prop.pop("default", None)
-    prop.pop("title", None)
+PROPOSAL_SCHEMA = strict_schema(Proposal.model_json_schema())
 
 SYSTEM = """You are NodeSnap's architectural design assistant. Translate a homeowner's
 request into a proposal. Whole-building design and existing-model edits are both
@@ -61,6 +100,36 @@ Supported actions:
   unsupported merely because it is not a small edit. Leave all edit fields null.
   Do not silently treat a whole-building request as adding one level or resizing
   one room. Specific engineering/regulated design remains outside this action.
+- set_site_features: add, resize or remove a yard, detached garage or outdoor pool
+  while preserving the existing house and its room layout. Use site_edits with
+  one edit per requested feature (up to three, applied together): set_yard,
+  set_garage, set_outdoor_pool. Every edit has yard, garage and pool payloads;
+  only the matching payload may be non-null. A null matching payload means an
+  explicit removal, never a default or keep operation. Omit unchanged features
+  from site_edits. Leave site_edits null for all other intents.
+  A yard is a rear yard and uses width_m (null means house width) and depth_m.
+  Explicit front/side yards or front/side outdoor pools need clarification; do
+  not silently move them to the rear or claim unsupported placement.
+  A garage uses width_m,
+  depth_m, height_m, side (left/right) and vehicle_door_width_m. It is a detached,
+  single-storey unconditioned garage, placed beside the house with a driveway
+  and real vehicle opening. These are supported geometry, not a room named garage.
+  Preserve current feature dimensions from context unless asked to change them.
+  For a new feature with no dimensions, use and disclose these concept defaults:
+  rear yard depth 8 m and house width; one-car garage 3.6 x 6 m, 2.8 m high,
+  vehicle door 2.6 m wide on the right; outdoor water basin 8 x 3.5 x 1.4 m.
+  set_outdoor_pool uses a PoolProgram with location=outdoor and level=ground.
+  It can add an outdoor pool or relocate the existing pool outdoors, preserving
+  current water dimensions when unspecified. Do not turn an outdoor pool into
+  an enclosed pool_hall. Removing it cannot delete an indoor pool. Use
+  set_pool_dimensions for a dimensions-only change to an existing pool.
+  Outdoor placement requires a fitting rear yard; if none exists a fitting
+  assumed yard is generated. A too-small explicit yard must be enlarged by an
+  explicit yard edit in the same request or explained as a size conflict.
+  Attached/integral garages and indoor-pool relocation are not this supported
+  topology: ask whether a detached garage or full interior redesign is wanted,
+  never silently substitute. An unqualified pool alongside a yard defaults to
+  outdoor, stated as an assumption; explicit indoor/basement intent takes priority.
 - add_level: add one occupied storey immediately below the roof and raise the
   roof/terrace. This is the supported action for "add another level/floor/storey".
   By default, copy the highest living floor's room layout and use its current
@@ -165,18 +234,6 @@ class DesignProposal(BaseModel):
         return self
 
 
-def strict_schema(schema: dict) -> dict:
-    """Meta's strict schema requires every nested property, including nullable ones."""
-    if isinstance(schema, dict):
-        schema = {key: strict_schema(value) for key, value in schema.items() if key != "default"}
-        if isinstance(schema.get("title"), str):
-            schema.pop("title")
-        if schema.get("type") == "object":
-            schema["required"] = list(schema.get("properties", {}))
-            schema["additionalProperties"] = False
-    elif isinstance(schema, list):
-        schema = [strict_schema(value) for value in schema]
-    return schema
 
 
 DESIGN_SCHEMA = strict_schema(DesignProposal.model_json_schema())
@@ -186,7 +243,7 @@ program when a current design is supplied. Return the complete BuildingProgram,
 not a patch, not geometry coordinates, and not an existing demonstration villa.
 
 Respect explicit requirements: building use, floor count, bedrooms/room counts,
-room functions, areas, overall dimensions, basement, pool and roof terrace. Ground
+room functions, areas, overall dimensions, basement, yard, garage, pool location and roof terrace. Ground
 is the first above-ground floor; basement is separate. floors has exactly one
 FloorProgram per above-ground storey in order. Each room count expands to exactly
 that many rooms on that floor. Occupancy such as a studio for8people is one room,
@@ -194,7 +251,7 @@ not8rooms. Distribute a requested total bedroom count
 across floors instead of repeating it on every floor. Never impose six rooms or
 five bedrooms. Use compact count groups for identical rooms. Give rooms human
 names and semantic uses (bedroom, living, kitchen, dining, office, meeting,
-bathroom, storage, laundry, garage, workshop, etc.). Bedrooms and principal
+bathroom, storage, laundry, workshop, etc.). Bedrooms and principal
 occupied rooms use classification=principal; bathrooms/storage/services use
 support. Do not include corridors or stairs in rooms: the generator allocates
 connected circulation and an aligned stair core separately.
@@ -220,10 +277,35 @@ When only a total floor area is supplied, interpret total across above-ground
 floors unless the user says per floor, and derive envelope accordingly.
 
 Basement is null unless requested; include a real basement FloorProgram if asked.
-Pool is null unless requested. Pool level is basement or ground, and that floor
-must exist. For an indoor pool, include a pool_hall support room large enough for
+Pool is null unless requested. Pool has location=indoor or outdoor; never omit
+or mislabel that distinction. For an explicit indoor/basement pool, location is
+indoor and level is basement or ground (that floor must exist). An unqualified
+pool requested alongside a yard defaults to outdoor at ground, with this choice
+recorded in design_notes. An explicitly outdoor/garden pool always uses
+location=outdoor and level=ground, lies outside the house in its rear yard, and
+must not create a pool_hall or count its water/deck as an enclosed room. For an
+indoor pool, include a pool_hall support room large enough for
 water plus a usable deck margin; water length+2m and width+2m must fit within its
 rectangular room after walls. Prefer generous envelope sizing for pool layouts.
+Yard and garage are their own optional BuildingProgram fields, null unless
+requested. Do not merely put their names in the title or design_notes. Do not
+model either as an ordinary room or invent their geometry in the room program.
+The yard is a rear outdoor area with width_m (null means house width) and depth_m.
+Only rear-yard siting is modeled; if a front/side yard or front/side pool is
+explicitly required, clarify that limit rather than labeling rear geometry as front.
+Use depth 8 m for an unspecified small yard; disclose inferred sizes. Outdoor
+pools need the yard to fit the water basin plus its deck; choose sufficient
+assumed yard dimensions, never silently enlarge explicit user dimensions. A pool
+requested outdoors without a yard may create a fitting assumed yard, disclosed.
+The garage is a detached, unconditioned one-storey outbuilding beside the house,
+with a driveway and vehicle door. Fields are width_m, depth_m, height_m,
+side=left/right and vehicle_door_width_m. For an unspecified one-car garage use
+3.6 x 6 m, height 2.8 m, door width 2.6 m, right side; a two-car garage can use
+6.5 x 6 m with a 5.2 m vehicle opening. These are concept assumptions, not parking
+standards. Attached or integral garages are not modeled: ask if a detached garage
+is acceptable rather than silently substituting it. Do not list a garage in floors.rooms.
+Yard, garage, driveway and outdoor pool siting are synthetic concepts, never a
+survey, legal parcel fit, setback permission, drainage design or pool safety approval.
 A roof slab always exists, but roof_terrace_area_m2=0 unless requested. Do not add
 an occupied terrace or basement pool to every home. When terrace is requested,
 choose an area comfortably below the roof's gross area, preserving stair access.
@@ -250,7 +332,7 @@ when the user states footprint dimensions or a gross floor-area constraint; othe
 use demonstration_assumption. For each room set area_basis=user_supplied only when
 that room area was explicitly stated; inferred room areas use demonstration_assumption.
 A supplied planning_feedback record describes an actual failed geometry candidate:
-repair only inferred values, preserve all explicit requirements and room/floor counts,
+repair only inferred values, preserve all explicit requirements, site features, pool location and room/floor counts,
 and never recategorize a supplied value as assumed to make a rejected design fit.
 If the request is empty of
 building intent ('hello', 'design something'), use intent=clarify with one useful

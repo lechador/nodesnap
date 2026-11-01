@@ -83,6 +83,37 @@ def _slab_region(slab):
     return Polygon(slab.polygon, holes=slab.holes)
 
 
+def site_surface_quantities(snapshot) -> dict | None:
+    """Measured concept-site areas; never legal lot, floor-area or setback checks.
+
+    Gross yard includes the pool/deck reservation, while grass and deck subtract
+    their canonical holes. The garage is a separate, unconditioned outbuilding.
+    """
+    layout = getattr(snapshot, "site_layout", None)
+    if layout is None:
+        return None
+    def gross(surface):
+        return Polygon(surface.polygon).area if surface else 0.0
+    def net(surface):
+        return Polygon(surface.polygon, holes=surface.holes).area if surface else 0.0
+    garage = layout.garage
+    return {
+        "revision_id": snapshot.revision_id,
+        "input_hash": snapshot.content_hash,
+        "input_basis": "derived",
+        "yard_gross_area_m2": gross(layout.yard),
+        "yard_grass_area_m2": net(layout.yard),
+        "garage_gross_floor_area_m2": gross(garage),
+        "garage_clear_floor_area_m2": Polygon(garage.polygon).buffer(-garage.wall_thickness_m, join_style=2).area if garage else 0.0,
+        "garage_roof_area_m2": gross(garage),
+        "driveway_area_m2": net(layout.driveway),
+        "pool_deck_area_m2": net(layout.pool_deck),
+        "outdoor_pool_water_area_m2": snapshot.pool.water_length_m * snapshot.pool.water_width_m if snapshot.pool and getattr(snapshot.pool, "location", "indoor") == "outdoor" else 0.0,
+        "area_basis": "Planar polygon area in metres; grass and deck subtract canonical holes. Garage clear floor is inside its wall faces, excluding door-reveal recesses. Garage is separate from house enclosed/conditioned area; outdoor surfaces are not enclosed floor area.",
+        "note": "Concept geometry only. Synthetic context is not a surveyed boundary. Parcel fit, setbacks, garage structure/fire separation/ventilation, pool barriers and site drainage are not established.",
+    }
+
+
 def envelope_components(snapshot) -> tuple[dict, dict]:
     """Exposed wall areas and projected roof catchment from hosted geometry.
 
@@ -148,16 +179,29 @@ def envelope_components(snapshot) -> tuple[dict, dict]:
         hvac["issues"] = [{"code": "MISSING_INPUT", "field": "exterior_opening_infill", "message": "Unfilled exterior passages are excluded from conduction. Infiltration and infill require design inputs."}]
     catchments = [{"zone": "occupied_terrace", "area_m2": terrace_area},
                   {"zone": "remaining_roof_and_headhouse", "area_m2": max(0.0, roof_area - terrace_area)}]
+    layout = getattr(snapshot, "site_layout", None)
+    garage = layout.garage if layout else None
+    garage_roof_area = Polygon(garage.polygon).area if garage else 0.0
+    if garage:
+        catchments.append({"zone": "detached_garage_roof", "area_m2": garage_roof_area,
+                           "object_ids": [garage.id]})
+        hvac["excluded_site_buildings"] = [{"object_id": garage.id, "use": "garage", "conditioning": "unconditioned", "area_m2": garage_roof_area}]
+        hvac["note"] += " Detached garage is unconditioned and excluded from this house-envelope allowance; its ventilation and services require separate design."
     for catchment in catchments:
         catchment.update({"runoff_l_s": roof_runoff_l_s(catchment["area_m2"], **RAIN_INPUTS), "input_basis": "derived", "revision_id": snapshot.revision_id})
-    drainage = {"execution_status": "completed", "roof_area_m2": roof_area, "terrace_area_m2": terrace_area,
-                "other_roof_area_m2": roof_area - terrace_area, "catchments": catchments,
-                "roof_object_ids": [slab.id for slab in roofs],
+    drainage = {"execution_status": "completed", "roof_area_m2": roof_area + garage_roof_area, "terrace_area_m2": terrace_area,
+                "other_roof_area_m2": roof_area + garage_roof_area - terrace_area, "catchments": catchments,
+                "roof_object_ids": [slab.id for slab in roofs] + ([garage.id] if garage else []),
                 "rainfall_mm_h_assumed": RAIN_INPUTS["rainfall_mm_h"],
                 "runoff_coefficient_assumed": RAIN_INPUTS["runoff_coefficient"],
                 "runoff_l_s": sum(catchment["runoff_l_s"] for catchment in catchments),
                 "area_basis": "Union of canonical roof slab projections, excluding unroofed openings; headhouse counted once. Occupied terrace is a subset, not added roof area.",
                 "note": "Scenario rainfall and runoff coefficient only. No drain positions, falls, overflow, pipe/detention capacity or receiving-system connection is established."}
+    if layout:
+        drainage["house_roof_area_m2"] = roof_area
+        drainage["garage_roof_area_m2"] = garage_roof_area
+        drainage["area_basis"] += " Detached-garage roof is a separate nonoverlapping catchment."
+        drainage["note"] += " Yard, paving and pool-deck runoff are excluded; their permeability, grading and drainage connections are unknown."
     return hvac, drainage
 
 
@@ -180,10 +224,22 @@ def build_inventories(snapshot) -> dict:
     if not metrics:
         electrical["issues"] = [{"code": "MISSING_INPUT", "field": "clear_room_areas", "message": "Only equipment allowances are counted; clear-area lighting awaits a coordinated architectural revision."}]
     hvac, drainage = envelope_components(snapshot)
+    if snapshot.pool and getattr(snapshot.pool, "location", "indoor") == "outdoor":
+        hvac["pool_environment"] = {
+            "location": "outdoor", "method_state": "research_required",
+            "execution_status": "blocked", "check_outcome": "not_evaluated",
+            "indoor_dehumidification_applicable": False,
+            "note": "Open-air pool: indoor dehumidification is not applicable. Outdoor evaporation/heat balance awaits sourced methods and project inputs.",
+        }
     for component in (electrical, hvac, drainage):
         component["revision_id"] = snapshot.revision_id
         component["input_hash"] = snapshot.content_hash
     plumbing = {**plumbing_totals(fixtures), "revision_id": snapshot.revision_id, "input_hash": snapshot.content_hash}
-    return {"plumbing": plumbing, "electrical": electrical, "hvac_energy": hvac, "drainage": drainage,
+    result = {"plumbing": plumbing, "electrical": electrical, "hvac_energy": hvac, "drainage": drainage,
             "revision_id": snapshot.revision_id, "input_hash": snapshot.content_hash,
             "input_basis": "demonstration_assumption", "input_bases": ["demonstration_assumption", "derived"]}
+    site = site_surface_quantities(snapshot)
+    if site is not None:
+        result["site_features"] = site
+        electrical["note"] += " Detached-garage and yard electrical services are excluded; no EV charger or landscape-lighting allowance is assumed. Listed pool equipment remains an explicit demonstration allowance."
+    return result

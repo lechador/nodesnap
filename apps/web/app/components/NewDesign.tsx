@@ -16,9 +16,9 @@ const examples = [
     text: "Create a two-storey office building, 14 by 12 metres. Ground floor: reception, an open studio for eight people, a meeting room, kitchenette and toilets. Upper floor: four private offices, a meeting room and toilets. No basement, pool or occupied roof terrace.",
   },
   {
-    title: "A home with a pool",
-    detail: "Two floors · four bedrooms · basement pool",
-    text: "Design a two-storey home, 18 by 16 metres, with four bedrooms, a living room, kitchen, dining room and study. Include bathrooms, a basement with an 8 by 3.5 metre pool, and a 60 square metre roof terrace. Use limestone and oak finishes.",
+    title: "A home with a yard",
+    detail: "Two floors · yard · garage · outdoor pool",
+    text: "Design a two-storey home, 18 by 16 metres, with four bedrooms, a living room, kitchen, dining room and study. Include bathrooms, a 18 by 8 metre backyard, a detached garage 3.6 by 6 metres and an outdoor pool 8 by 3.5 metres. No basement or occupied roof terrace. Use limestone and oak finishes.",
   },
 ];
 type Props = {

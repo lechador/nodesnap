@@ -487,39 +487,44 @@ export default function Plan2D({
                   );
                 },
               )}
-              {snap.pool && snap.pool.level_id === lvl.id && (
-                <g>
-                  <rect
-                    x={X + snap.pool.origin_x_m * S}
-                    y={
-                      Y +
-                      (H - snap.pool.origin_y_m - snap.pool.water_width_m) * S
-                    }
-                    width={snap.pool.water_length_m * S}
-                    height={snap.pool.water_width_m * S}
-                    fill="#d6e9e5"
-                    stroke="#729b97"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x={
-                      X +
-                      (snap.pool.origin_x_m + snap.pool.water_length_m / 2) * S
-                    }
-                    y={
-                      Y +
-                      (H - snap.pool.origin_y_m - snap.pool.water_width_m / 2) *
-                        S
-                    }
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="#315e5a"
-                  >
-                    POOL · {length(snap.pool.water_length_m, units)} ×{" "}
-                    {length(snap.pool.water_width_m, units)}
-                  </text>
-                </g>
-              )}
+              {snap.pool &&
+                snap.pool.location !== "outdoor" &&
+                snap.pool.level_id === lvl.id && (
+                  <g>
+                    <rect
+                      x={X + snap.pool.origin_x_m * S}
+                      y={
+                        Y +
+                        (H - snap.pool.origin_y_m - snap.pool.water_width_m) * S
+                      }
+                      width={snap.pool.water_length_m * S}
+                      height={snap.pool.water_width_m * S}
+                      fill="#d6e9e5"
+                      stroke="#729b97"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={
+                        X +
+                        (snap.pool.origin_x_m + snap.pool.water_length_m / 2) *
+                          S
+                      }
+                      y={
+                        Y +
+                        (H -
+                          snap.pool.origin_y_m -
+                          snap.pool.water_width_m / 2) *
+                          S
+                      }
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill="#315e5a"
+                    >
+                      POOL · {length(snap.pool.water_length_m, units)} ×{" "}
+                      {length(snap.pool.water_width_m, units)}
+                    </text>
+                  </g>
+                )}
               {dimensions && (
                 <g fill="#59665c" stroke="#849084" strokeWidth=".6">
                   <path

@@ -38,6 +38,8 @@ import {
   type Surface,
 } from "./scene-model";
 
+import { garageParts, waterPolygon } from "./site-model";
+
 export type ModelView = "building" | "cutaway" | "exploded";
 export interface Villa3DProps {
   snap: RenderSnapshot;
@@ -62,6 +64,8 @@ const SURFACES: Surface[] = [
   "linen",
   "water",
   "cap",
+  "grass",
+  "ground",
 ];
 type Palette = Record<Surface, THREE.MeshStandardMaterial>;
 
@@ -181,6 +185,8 @@ function usePalette(
         envMapIntensity: 0.8,
       }),
       cap: solid("#7c8277", 0.8),
+      grass: solid("#849367", 1),
+      ground: solid("#e9e9e1", 1),
     } satisfies Palette;
   }, [white, paletteId]);
   useEffect(
@@ -443,7 +449,11 @@ function Floor({
   );
   useEffect(() => () => selectedMaterial.dispose(), [selectedMaterial]);
   if (!architecture) return null;
-  const pool = snapshot.pool?.level_id === level.id ? snapshot.pool : null;
+  const pool =
+    snapshot.pool?.location !== "outdoor" &&
+    snapshot.pool?.level_id === level.id
+      ? snapshot.pool
+      : null;
   return (
     <>
       {architecture.slabs
@@ -548,12 +558,107 @@ function Floor({
   );
 }
 
+function SiteModel({
+  snap,
+  materials,
+  cutaway,
+  replayKey,
+  reduced,
+}: {
+  snap: RenderSnapshot;
+  materials: Palette;
+  cutaway: boolean;
+  replayKey: number;
+  reduced: boolean;
+}) {
+  const site = snap.site_layout;
+  const parts = useMemo(
+    () => (site?.garage ? garageParts(site.garage, cutaway) : []),
+    [site, cutaway],
+  );
+  if (!site) return null;
+  const pool = snap.pool?.location === "outdoor" ? snap.pool : null;
+  const ground = snap.levels.find((l) => l.name === "ground")?.elevation_m ?? 0;
+  return (
+    <>
+      {site.yard && (
+        <PlanarSurface
+          polygon={site.yard.polygon}
+          holes={site.yard.holes}
+          y={site.yard.elevation_m}
+          material={materials.grass}
+        />
+      )}
+      {site.driveway && (
+        <PlanarSurface
+          polygon={site.driveway.polygon}
+          holes={site.driveway.holes}
+          y={site.driveway.elevation_m}
+          material={materials.concrete}
+        />
+      )}
+      {site.pool_deck && (
+        <PlanarSurface
+          polygon={site.pool_deck.polygon}
+          holes={site.pool_deck.holes}
+          y={site.pool_deck.elevation_m}
+          material={materials.stone}
+        />
+      )}
+      {pool && (
+        <>
+          <PlanarSurface
+            polygon={waterPolygon(pool)}
+            y={ground - pool.water_depth_m}
+            material={materials.stone}
+          />
+          <mesh
+            material={materials.water}
+            position={[
+              pool.origin_x_m + pool.water_length_m / 2,
+              ground - pool.water_depth_m / 2,
+              -pool.origin_y_m - pool.water_width_m / 2,
+            ]}
+            receiveShadow
+          >
+            <boxGeometry
+              args={[
+                pool.water_length_m,
+                pool.water_depth_m,
+                pool.water_width_m,
+              ]}
+            />
+          </mesh>
+        </>
+      )}
+      {site.garage && (
+        <AnimatedLevel
+          key={`garage-${snap.revision_id}-${replayKey}-${cutaway}`}
+          elevation={0}
+          index={1}
+          reduced={reduced}
+        >
+          {SURFACES.map((surface) => (
+            <Boxes
+              key={surface}
+              parts={parts.filter((part) => part.surface === surface)}
+              material={materials[surface]}
+            />
+          ))}
+        </AnimatedLevel>
+      )}
+    </>
+  );
+}
+
 function CameraRig({
+  rearView = false,
   bounds,
   vertical,
   resetKey,
   zoomRequest,
 }: {
+  rearView?: boolean;
   bounds: Bounds;
   vertical: { min: number; max: number; height: number };
   resetKey: number;
@@ -570,12 +675,12 @@ function CameraRig({
     camera.position.set(
       27 * distanceScale,
       targetY + 24 * distanceScale,
-      32 * distanceScale,
+      (rearView ? -32 : 32) * distanceScale,
     );
     controls.current?.target.set(0, targetY, 0);
     controls.current?.update();
     invalidate();
-  }, [camera, invalidate, resetKey, targetY, distanceScale]);
+  }, [camera, invalidate, resetKey, targetY, distanceScale, rearView]);
   useEffect(() => {
     if (camera instanceof THREE.OrthographicCamera) {
       camera.zoom = baseZoom * Math.pow(1.18, zoomRequest);
@@ -722,15 +827,20 @@ function Scene({
   zoomRequest,
   reduced,
   portalElement,
+  rearView,
 }: Villa3DProps & {
   resetKey: number;
   zoomRequest: number;
+  rearView: boolean;
   reduced: boolean;
   portalElement: HTMLDivElement | null;
 }) {
   const materials = usePalette(materialMode === "white", snap.material_palette);
-  const bounds = useMemo(() => modelBounds(snap), [snap]);
   const active = snap.levels.find((l) => l.name === level) ?? snap.levels[0];
+  const showSite = mode !== "cutaway" || active.name === "ground";
+  const bounds = useMemo(() => modelBounds(snap, showSite), [snap, showSite]);
+  const outdoorWater =
+    showSite && snap.pool?.location === "outdoor" ? snap.pool : null;
   const orderedLevels = [...snap.levels].sort(
     (a, b) => a.elevation_m - b.elevation_m,
   );
@@ -755,26 +865,55 @@ function Scene({
         top={vertical.max}
         span={Math.max(vertical.height, bounds.width, bounds.depth)}
       />
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[
-          0,
-          mode === "cutaway"
-            ? active.elevation_m -
-              (snap.pool?.level_id === active.id
-                ? snap.pool.water_depth_m + 0.2
-                : 0.4)
-            : mode === "exploded"
-              ? vertical.min - 0.15
-              : -0.38,
-          0,
-        ]}
-        receiveShadow
-      >
-        <planeGeometry args={[220, 220]} />
-        <meshStandardMaterial color="#e9e9e1" roughness={1} />
-      </mesh>
+      {outdoorWater ? (
+        <PlanarSurface
+          polygon={[
+            [-110, -110],
+            [110, -110],
+            [110, 110],
+            [-110, 110],
+            [-110, -110],
+          ]}
+          holes={[
+            waterPolygon(outdoorWater).map((p) => [
+              p[0] - bounds.cx,
+              p[1] - bounds.cy,
+            ]),
+          ]}
+          y={-0.38}
+          material={materials.ground}
+        />
+      ) : (
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[
+            0,
+            mode === "cutaway"
+              ? active.elevation_m -
+                (snap.pool?.level_id === active.id
+                  ? snap.pool.water_depth_m + 0.2
+                  : 0.4)
+              : mode === "exploded"
+                ? vertical.min - 0.15
+                : -0.38,
+            0,
+          ]}
+          receiveShadow
+        >
+          <planeGeometry args={[220, 220]} />
+          <meshStandardMaterial color="#e9e9e1" roughness={1} />
+        </mesh>
+      )}
       <group position={[-bounds.cx, 0, bounds.cy]}>
+        {showSite && (
+          <SiteModel
+            snap={snap}
+            materials={materials}
+            cutaway={mode === "cutaway"}
+            replayKey={replayKey}
+            reduced={reduced}
+          />
+        )}
         {levels.map((floor, index) => {
           const originalIndex = orderedLevels.findIndex(
             (l) => l.id === floor.id,
@@ -817,6 +956,7 @@ function Scene({
           ))}
       </group>
       <CameraRig
+        rearView={showSite && rearView}
         bounds={bounds}
         vertical={vertical}
         resetKey={resetKey}
@@ -846,7 +986,7 @@ class SceneBoundary extends Component<
   }
 }
 
-function CameraIcon({ kind }: { kind: "home" | "plus" | "minus" }) {
+function CameraIcon({ kind }: { kind: "home" | "plus" | "minus" | "turn" }) {
   return (
     <svg
       width="17"
@@ -859,7 +999,9 @@ function CameraIcon({ kind }: { kind: "home" | "plus" | "minus" }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {kind === "home" ? (
+      {kind === "turn" ? (
+        <path d="M20 7h-6m6 0V2m0 5a9 9 0 1 0 1 10" />
+      ) : kind === "home" ? (
         <>
           <path d="m3 10 9-7 9 7v10H3Z" />
           <path d="M9 20v-7h6v7" />
@@ -877,6 +1019,8 @@ function CameraIcon({ kind }: { kind: "home" | "plus" | "minus" }) {
 export default function Villa3D(props: Villa3DProps) {
   const [resetKey, setResetKey] = useState(0),
     [zoomRequest, setZoomRequest] = useState(0);
+  const [rearOverride, setRearOverride] = useState<boolean | null>(null);
+  const rearView = !!props.snap.site_layout?.yard && (rearOverride ?? true);
   // R3F mounts its scene in a separate React root. Wait for our own attached
   // portal instead of letting Drei capture a transient Canvas event target.
   // This also preserves handles when Documents unmounts and remounts the model.
@@ -939,6 +1083,7 @@ export default function Villa3D(props: Villa3DProps) {
             zoomRequest={zoomRequest}
             reduced={reduced}
             portalElement={portalElement}
+            rearView={rearView}
           />
         </Canvas>
       </SceneBoundary>
@@ -980,6 +1125,16 @@ export default function Villa3D(props: Villa3DProps) {
         >
           <CameraIcon kind="home" />
         </button>
+        {props.snap.site_layout?.yard && (
+          <button
+            type="button"
+            aria-label={rearView ? "View front of house" : "View backyard"}
+            title={rearView ? "View front of house" : "View backyard"}
+            onClick={() => setRearOverride(!rearView)}
+          >
+            <CameraIcon kind="turn" />
+          </button>
+        )}
         <button
           type="button"
           aria-label="Zoom in 3D"

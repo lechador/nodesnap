@@ -48,6 +48,11 @@ def enrich_snapshot(snapshot):
     Repeat execution is deterministic, including stable entity identities. The
     caller sets the revision identity first and hashes after this derivation.
     """
+    if (snapshot.site_layout is not None
+            or snapshot.building_program and (snapshot.building_program.yard or snapshot.building_program.garage)
+            or snapshot.pool and snapshot.pool.location == "outdoor"):
+        from .site import coordinate_site
+        coordinate_site(snapshot)
     envelope = snapshot.envelope_polygon or rect(0, 0, 18, 15.5)
     ex0, ey0 = min(p[0] for p in envelope), min(p[1] for p in envelope)
     ex1, ey1 = max(p[0] for p in envelope), max(p[1] for p in envelope)
@@ -134,7 +139,7 @@ def enrich_snapshot(snapshot):
             if stair_space:
                 metric = next(m for m in architecture.space_metrics if m.space_id == stair_space.id)
                 holes.append(metric.clear_polygon)
-        if snapshot.pool and snapshot.pool.level_id == level.id:
+        if snapshot.pool and snapshot.pool.location == "indoor" and snapshot.pool.level_id == level.id:
             pool = snapshot.pool
             holes.append(rect(pool.origin_x_m, pool.origin_y_m, pool.water_length_m, pool.water_width_m))
         architecture.slabs.append(Slab(id=sid(f"slab:{level.id}"), level_id=level.id,

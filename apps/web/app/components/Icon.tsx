@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 export type IconName =
   | "cube"
+  | "site"
   | "plan"
   | "layers"
   | "arrow"
@@ -34,6 +35,12 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="m12 3 9 5v8l-9 5-9-5V8Z" />
       <path d="m3 8 9 5 9-5M12 13v8m-4.5-15.5 9 5" />
+    </>
+  ),
+  site: (
+    <>
+      <path d="M3 3h18v18H3Z" />
+      <path d="M6 12h8v6H6Zm0 0 4-4 4 4M17 6v7m-2-5 2-2 2 2m-2 8v2" />
     </>
   ),
   plan: (

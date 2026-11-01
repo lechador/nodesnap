@@ -98,6 +98,7 @@ def validate_snapshot(snapshot) -> list[dict]:
             invalid_levels = True
     if invalid_levels:
         return issues  # References/topology must be sound before traversing architecture.
+    issues.extend(validate_site_layout(snapshot))
     if snapshot.pool:
         pool = snapshot.pool
         values = [pool.water_length_m, pool.water_width_m, pool.water_depth_m, pool.origin_x_m, pool.origin_y_m]
@@ -108,7 +109,18 @@ def validate_snapshot(snapshot) -> list[dict]:
             water = Polygon([(pool.origin_x_m, pool.origin_y_m), (pool.origin_x_m + pool.water_length_m, pool.origin_y_m),
                              (pool.origin_x_m + pool.water_length_m, pool.origin_y_m + pool.water_width_m),
                              (pool.origin_x_m, pool.origin_y_m + pool.water_width_m)])
-            if hall is None or not Polygon(hall.polygon).covers(water):
+            if pool.location == "outdoor":
+                ground = next((level for level in snapshot.levels if level.name == "ground"),None)
+                if ground is None or pool.level_id != ground.id:
+                    issues.append({"code":"INVALID_REFERENCE","object_id":pool.id,"message":"An outdoor pool must reference the ground-level datum."})
+                yard = snapshot.site_layout.yard if snapshot.site_layout else None
+                yard_shape = Polygon(yard.polygon) if yard and len(yard.polygon)>=4 else None
+                if yard_shape is None or not yard_shape.is_valid or not yard_shape.buffer(1e-8).covers(water):
+                    issues.append({"code":"OUTSIDE_YARD","object_id":pool.id,"message":"Outdoor pool water must remain inside its coordinated yard."})
+                envelope = Polygon(snapshot.envelope_polygon or [[0,0],[18,0],[18,15.5],[0,15.5],[0,0]])
+                if envelope.intersection(water).area > 1e-8:
+                    issues.append({"code":"POOL_BUILDING_INTERSECTION","object_id":pool.id,"message":"Outdoor pool water intersects the house footprint."})
+            elif hall is None or not Polygon(hall.polygon).covers(water):
                 issues.append({"code": "OUTSIDE_POOL_HALL", "object_id": pool.id, "message": "Pool water must remain inside its host pool hall."})
             elif snapshot.architecture:
                 metric = next((m for m in snapshot.architecture.space_metrics if m.space_id == hall.id), None)
@@ -183,4 +195,95 @@ def validate_snapshot(snapshot) -> list[dict]:
         if metric.net_area_m2 <= 0 or min(metric.clear_width_m, metric.clear_depth_m) <= 0:
             issues.append({"code": "INVALID_CLEAR_DIMENSION", "object_id": metric.space_id,
                            "message": "Wall thickness consumes the entire room width or depth."})
+    return issues
+
+
+def validate_site_layout(snapshot) -> list[dict]:
+    """Check the saved concept geometry; these are not parcel/code checks."""
+    layout = snapshot.site_layout
+    if layout is None:
+        if snapshot.pool and snapshot.pool.location == "outdoor":
+            return [{"code":"MISSING_SITE_LAYOUT","object_id":snapshot.pool.id,"message":"An outdoor pool requires a coordinated site layout."}]
+        return []
+    issues = []
+    def issue(code,message,object_id=None):
+        issues.append({"code":code,"message":message,**({"object_id":object_id} if object_id else {})})
+    if layout.revision_id != snapshot.revision_id:
+        issue("STALE_REVISION","Site layout belongs to another revision.")
+    features = [item for item in (layout.yard,layout.garage,layout.driveway,layout.pool_deck) if item]
+    ids = [item.id for item in features]
+    if len(set(ids)) != len(ids) or set(ids).intersection(space.id for space in snapshot.spaces):
+        issue("DUPLICATE_ID","Site-feature identities must be unique and distinct from room identities.")
+    def polygon(ring,holes=(),name="site"):
+        rings = [ring,*holes]
+        if any(len(points)<4 or points[0] != points[-1] or any(len(p)!=2 or not all(math.isfinite(v) for v in p) for p in points) for points in rings):
+            issue("INVALID_GEOMETRY",f"{name}: polygons must be closed rings of finite XY pairs.")
+            return None
+        result = Polygon(ring,holes)
+        if not result.is_valid or result.area <= 0:
+            issue("INVALID_GEOMETRY",f"{name}: invalid or nonpositive polygon ({explain_validity(result)}).")
+            return None
+        return result
+    context = polygon(layout.context_polygon,name="Study extent")
+    house = polygon(snapshot.envelope_polygon or [[0,0],[18,0],[18,15.5],[0,15.5],[0,0]],name="House")
+    shapes = {}
+    for feature in features:
+        shape = polygon(feature.polygon,getattr(feature,"holes",()),feature.name)
+        if shape:
+            shapes[feature.id] = shape
+        if not math.isfinite(feature.elevation_m):
+            issue("INVALID_GEOMETRY",f"{feature.name}: ground elevation must be finite.",feature.id)
+        if context and shape and not context.buffer(1e-8).covers(Polygon(feature.polygon)):
+            issue("OUTSIDE_CONTEXT",f"{feature.name} lies outside the synthetic study extent.",feature.id)
+        if house and shape and house.intersection(shape).area > 1e-8:
+            issue("SITE_BUILDING_INTERSECTION",f"{feature.name} overlaps the enclosed house footprint.",feature.id)
+    for index,feature in enumerate(features):
+        for other in features[index+1:]:
+            a,b = shapes.get(feature.id),shapes.get(other.id)
+            if a and b and a.intersection(b).area > 1e-8:
+                issue("SITE_OVERLAP",f"{feature.name} overlaps {other.name}.",feature.id)
+    if context and house and not context.buffer(1e-8).covers(house):
+        issue("OUTSIDE_CONTEXT","The house lies outside the synthetic study extent.")
+    if bool(layout.garage) != bool(layout.driveway):
+        issue("MISSING_VEHICLE_ACCESS","The detached garage and its vehicle approach must be coordinated together.")
+    garage = layout.garage
+    if garage and garage.id in shapes:
+        shape = shapes[garage.id]
+        x0,y0,x1,y1 = shape.bounds
+        values = [garage.height_m,garage.wall_thickness_m,garage.roof_thickness_m,garage.slab_thickness_m,
+                  garage.vehicle_door_width_m,garage.vehicle_door_height_m]
+        if not all(math.isfinite(v) and v>0 for v in values) or min(x1-x0,y1-y0)<=2*garage.wall_thickness_m:
+            issue("INVALID_CLEAR_DIMENSION","Garage assemblies must leave a positive clear enclosure.",garage.id)
+        ends = [garage.vehicle_door_start,garage.vehicle_door_end]
+        if any(len(p)!=2 or not all(math.isfinite(v) for v in p) for p in ends):
+            issue("INVALID_OPENING_HOST","The garage door requires finite XY endpoints.",garage.id)
+        else:
+            opening = LineString(ends)
+            if (not math.isclose(opening.length,garage.vehicle_door_width_m,abs_tol=1e-7)
+                    or not shape.boundary.buffer(1e-8).covers(opening)
+                    or any(abs(p[1]-y0)>1e-8 or p[0]<x0+garage.wall_thickness_m-1e-8 or p[0]>x1-garage.wall_thickness_m+1e-8 for p in ends)
+                    or garage.vehicle_door_height_m > garage.height_m):
+                issue("INVALID_OPENING_HOST","Vehicle door must fit the garage's front wall and declared width/height.",garage.id)
+            approach = shapes.get(layout.driveway.id) if layout.driveway else None
+            if approach and not approach.buffer(1e-8).covers(opening):
+                issue("MISSING_VEHICLE_ACCESS","The driveway does not meet the complete vehicle opening.",garage.id)
+    outside_pool = snapshot.pool if snapshot.pool and snapshot.pool.location == "outdoor" else None
+    if bool(outside_pool) != bool(layout.pool_deck):
+        issue("MISSING_POOL_DECK","An outdoor pool and its deck must be coordinated together.")
+    if outside_pool and layout.pool_deck and layout.yard:
+        water_values = [outside_pool.origin_x_m,outside_pool.origin_y_m,outside_pool.water_length_m,outside_pool.water_width_m]
+        if all(math.isfinite(value) for value in water_values) and min(water_values[2:])>0:
+            x,y,length,width = water_values
+            water = Polygon([(x,y),(x+length,y),(x+length,y+width),(x,y+width),(x,y)])
+            deck = polygon(layout.pool_deck.polygon,name="Pool deck extent")
+            yard = polygon(layout.yard.polygon,name="Yard extent")
+            water_hole = polygon(layout.pool_deck.holes[0],name="Pool deck water opening") if len(layout.pool_deck.holes)==1 else None
+            lawn_hole = polygon(layout.yard.holes[0],name="Yard deck opening") if len(layout.yard.holes)==1 else None
+            if deck and (not deck.covers(water) or water_hole is None or not water_hole.equals(water)):
+                issue("INVALID_POOL_DECK","The deck must contain and exclude the exact water rectangle.",outside_pool.id)
+            if deck and yard and (not yard.covers(deck) or lawn_hole is None or not lawn_hole.equals(deck)):
+                issue("INVALID_YARD","Lawn must exclude the exact pool/deck footprint within the yard.",layout.yard.id)
+            for feature in (layout.garage,layout.driveway):
+                if feature and feature.id in shapes and shapes[feature.id].intersection(water).area>1e-8:
+                    issue("POOL_SITE_INTERSECTION",f"Outdoor pool water overlaps {feature.name}.",outside_pool.id)
     return issues

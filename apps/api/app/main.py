@@ -32,7 +32,7 @@ from domain.commands import CommandError, apply_commands
 from domain.models import BuildingProgram, FT2_TO_M2, ProjectSnapshot, new_id
 from domain.building import build_building
 from domain.seed import build_seed
-from engineering.registry import METHODS
+from engineering.registry import methods_for_snapshot
 from engineering.pool import pool_quantities
 from geometry.generate import generate_floor
 from geometry.validate import area_schedule, validate_snapshot
@@ -204,13 +204,28 @@ async def planned_building(factory, text, history=None, context=""):
             geometry_message = str(exc)
             feedback = (f"The deterministic geometry check rejected this candidate: {geometry_message} "
                         "Return a revised complete program that fits. Preserve the exact requested floor and room counts, uses, labels, pool/basement/terrace choices, "
-                        "all user_supplied footprint/room areas and all other protected requirements. Adjust only demonstration_assumption room areas/footprint. "
+                        "all user_supplied footprint/room areas, yard/garage settings, pool location and all other protected requirements. Adjust only demonstration_assumption room areas/footprint. "
                         "For an explicit footprint, leave generous circulation and service capacity (usually room targets total 55–65% of gross footprint). "
                         "An undersized room may need a larger area or redistribution, even when the total area is small. "
                         "Do not repeat the identical failed candidate. If these explicit requirements conflict, ask one relevant clarification.")
     return {**output, "execution_status": "blocked" if geometry_message else "error", "proposal": None,
             "issue": {"code": "INFEASIBLE_LAYOUT" if geometry_message else "MALFORMED_OUTPUT",
                       "message": geometry_message or "The building program could not be interpreted. Please clarify the rooms and floors."}}
+
+
+def site_feature_descriptions(snapshot: ProjectSnapshot) -> dict[str, str]:
+    """Describe committed SI geometry, never a provider's claimed additions."""
+    layout = snapshot.site_layout
+    features = {}
+    for field, label in (("yard", "rear yard"), ("garage", "detached garage")):
+        item = getattr(layout, field, None) if layout else None
+        if item:
+            xs, ys = [point[0] for point in item.polygon], [point[1] for point in item.polygon]
+            features[field] = f"{max(xs) - min(xs):g} × {max(ys) - min(ys):g} m {label}"
+    if snapshot.pool:
+        pool = snapshot.pool
+        features["pool"] = f"{pool.water_length_m:g} × {pool.water_width_m:g} m {pool.location} pool"
+    return features
 
 
 def design_summary(snapshot, *, redesign=False):
@@ -224,8 +239,11 @@ def design_summary(snapshot, *, redesign=False):
     description = f"{verb} {snapshot.title}: {len(floors)} above-ground {'floor' if len(floors) == 1 else 'floors'}, {rooms} requested rooms"
     if bedrooms:
         description += f" including {bedrooms} {'bedroom' if bedrooms == 1 else 'bedrooms'}"
-    return (description + f", in a {program.width_m:g} × {program.depth_m:g} m footprint. "
-            f"The model and plans share revision {snapshot.revision_number}; concept assumptions are recorded with the design.")
+    description += f", in a {program.width_m:g} × {program.depth_m:g} m building footprint. "
+    features = site_feature_descriptions(snapshot)
+    if features:
+        description += "Includes: " + ", ".join(features.values()) + ". "
+    return (description + f"The model and plans share revision {snapshot.revision_number}; concept assumptions are recorded with the design.")
 
 
 def revision_info(snapshot):
@@ -646,10 +664,10 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
     def coverage(project_id: str, revision_id: str, request: Request, actor_id: str = Depends(actor)):
         with factory() as db:
             project = own_project(db, actor_id, project_id)
-            load_snapshot(db, project_id, revision_id)
+            snapshot = load_snapshot(db, project_id, revision_id)
             has_analysis = db.query(AnalysisRow).filter_by(project_id=project_id, revision_id=revision_id).first() is not None
             has_export = db.query(ArtifactRow).filter_by(project_id=project_id, revision_id=revision_id, extension="pdf").first() is not None
-        return envelope({"revision_id": revision_id, "freshness_status": "current" if project.current_revision_id == revision_id else "stale", "workflow_complete": has_analysis and has_export, "discipline_design_complete": False, "methods": [method.model_dump(mode="json") for method in METHODS]}, request)
+        return envelope({"revision_id": revision_id, "freshness_status": "current" if project.current_revision_id == revision_id else "stale", "workflow_complete": has_analysis and has_export, "discipline_design_complete": False, "methods": [method.model_dump(mode="json") for method in methods_for_snapshot(snapshot)]}, request)
 
     @app.get("/api/v1/jobs/{job_id}")
     def job(job_id: str, request: Request, actor_id: str = Depends(actor)):
@@ -690,8 +708,8 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
             snapshot = load_snapshot(db, project_id, body.revision_id)
         results = compute_results(snapshot)
         export_id, pdf_id, model_id, manifest_id = (new_id() for _ in range(4))
-        coverage_basis = {"discipline_design_complete": False, "methods": [method.model_dump(mode="json") for method in METHODS]}
-        basis = {"export_id": export_id, **revision_info(snapshot), "result_set_hash": digest(results), "coverage_hash": digest(coverage_basis), "report_template_version": "0.4.0"}
+        coverage_basis = {"discipline_design_complete": False, "methods": [method.model_dump(mode="json") for method in methods_for_snapshot(snapshot)]}
+        basis = {"export_id": export_id, **revision_info(snapshot), "result_set_hash": digest(results), "coverage_hash": digest(coverage_basis), "report_template_version": "0.5.0"}
         pdf, sheet_index = build_review_package(snapshot, results)
         model_bytes = snapshot.model_dump_json(indent=2).encode()
         manifest = {**basis, "export_basis_hash": digest(basis), "artifact_id": pdf_id, "model_artifact_id": model_id, "manifest_artifact_id": manifest_id,
@@ -803,12 +821,13 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
             "living_floor_order": [level.name for level in occupied_levels],
             "removable_levels": [level.name for level in occupied_levels if level.name != "ground"],
             "has_prior_revision": snapshot.parent_revision_id is not None,
-            "pool": snapshot.pool.model_dump(mode="json") if snapshot.pool else None,
+            "pool": {**snapshot.pool.model_dump(mode="json"), "location": snapshot.pool.location} if snapshot.pool else None,
             "terrace_area_m2": snapshot.roof_terrace_area_m2,
             "pool_quantities": pool_quantities(snapshot.pool.water_length_m, snapshot.pool.water_width_m, snapshot.pool.water_depth_m) if snapshot.pool else None,
             "levels": [{"name": level.name, "label": level.label, "elevation_m": level.elevation_m,
                         "floor_to_floor_height_m": round(ordered_levels[index + 1].elevation_m - level.elevation_m, 6) if index + 1 < len(ordered_levels) else None}
                        for index, level in enumerate(ordered_levels)],
+            "site_layout": snapshot.site_layout.model_dump(mode="json") if snapshot.site_layout else None,
             "rooms": [{"name": space.name, "use": space.use, "level": levels[space.level_id],
                        "clear_area_m2": clear_areas.get(space.id),
                        "target_area_ft2": round(space.target_area_m2 / FT2_TO_M2, 2) if space.target_area_m2 else None}
@@ -851,11 +870,12 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
                         result["issue"] = {"code": "MISSING_INPUT", "message": proposal["explanation"]}
                 if proposal:
                     result["explanation"] = proposal["explanation"]
-                    command = proposal_command(proposal, snapshot)
+                    commands = proposal_commands(proposal, snapshot)
                     new_snapshot = None
-                    if command:
-                        command["command_id"] = new_id()
-                        new_snapshot = apply_commands(snapshot, [command])
+                    if commands:
+                        for command in commands:
+                            command["command_id"] = new_id()
+                        new_snapshot = apply_commands(snapshot, commands)
                         validate_proposed(new_snapshot)
                     elif proposal["intent"] == "regenerate_floor":
                         level_name = proposal.get("level")
@@ -875,7 +895,7 @@ def create_app(database_url: str | None = None, artifact_root: str | Path | None
                     if new_snapshot:
                         with factory.begin() as db:
                             own_project(db, actor_id, project_id)
-                            committed = commit_snapshot(db, actor_id, snapshot, new_snapshot, commands=[command] if command else [])
+                            committed = commit_snapshot(db, actor_id, snapshot, new_snapshot, commands=commands)
                             result.update(committed_revision_id=committed["revision_id"], committed_revision_number=committed["revision_number"], invalidated_result_groups=committed["invalidated_result_groups"])
                             result["explanation"] = committed_message(proposal, new_snapshot, snapshot)
                             result["spend_total_est_usd"] = budget.summary(db)["est_total_usd"]
@@ -939,6 +959,24 @@ def committed_message(proposal: dict, snapshot: ProjectSnapshot, previous: Proje
     intent = proposal["intent"]
     if intent == "design_building":
         return design_summary(snapshot, redesign=True)
+    if intent == "set_site_features":
+        actual = site_feature_descriptions(snapshot)
+        before = site_feature_descriptions(previous) if previous else {}
+        changes = []
+        fields = {"set_yard": "yard", "set_garage": "garage", "set_outdoor_pool": "pool"}
+        for edit in proposal["site_edits"]:
+            field = fields[edit["type"]]
+            if edit.get(field) is None:
+                changes.append(f"Removed the {'outdoor pool' if field == 'pool' else field}.")
+            elif field in actual:
+                verb = "Updated" if field in before else "Added"
+                changes.append(f"{verb} the {actual[field]}." + (" Its vehicle door and driveway are included." if field == "garage" else ""))
+        if previous and previous.pool and previous.pool.location == "indoor" and snapshot.pool and snapshot.pool.location == "outdoor":
+            changes.append("The former indoor pool hall remains in the house layout and can be redesigned separately.")
+        if "yard" in actual and "yard" not in before and not any(edit["type"] == "set_yard" for edit in proposal["site_edits"]):
+            changes.append("A fitting rear yard was added as a siting assumption.")
+        return (" ".join(changes) + f" Model and plans now share revision {snapshot.revision_number}. "
+                "Siting is a concept assumption; parcel boundaries, setbacks and safety requirements still need review.")
     if intent == "remove_level" and previous:
         current_ids = {level.id for level in snapshot.levels}
         removed = next(level for level in previous.levels if level.id not in current_ids)
@@ -972,6 +1010,27 @@ def committed_message(proposal: dict, snapshot: ProjectSnapshot, previous: Proje
     if intent == "set_level_height":
         return f"Set the {proposal['level']} floor-to-floor height to {proposal['level_height_m']:g} m and coordinated the levels above it. Saved revision {snapshot.revision_number}."
     return f"Generated a valid {proposal.get('level', 'ground')}-floor layout in revision {snapshot.revision_number}. Room areas and openings now reflect that layout; affected calculations need to be rerun."
+
+
+def proposal_commands(proposal: dict, snapshot: ProjectSnapshot) -> list[dict]:
+    if proposal["intent"] == "set_site_features":
+        edits = proposal.get("site_edits") or []
+        if not edits or len(edits) > 3 or len({edit["type"] for edit in edits}) != len(edits):
+            raise CommandError("Specify each yard, garage or outdoor-pool change once.")
+        fields = {"set_yard": "yard", "set_garage": "garage", "set_outdoor_pool": "pool"}
+        commands = []
+        for edit in edits:
+            field = fields.get(edit.get("type"))
+            if field is None or field not in edit:
+                raise CommandError("This site feature change is not supported.")
+            commands.append({"type": edit["type"], field: edit[field]})
+        # Place/remove the pool before removing a yard; additions place the yard
+        # before the pool. Each case is applied atomically to one revision.
+        commands.sort(key=lambda cmd: (2 if cmd["type"] == "set_yard" and cmd["yard"] is None else
+                                      0 if cmd["type"] == "set_yard" else 1))
+        return commands
+    command = proposal_command(proposal, snapshot)
+    return [command] if command else []
 
 
 def proposal_command(proposal: dict, snapshot: ProjectSnapshot):

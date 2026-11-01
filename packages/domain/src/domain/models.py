@@ -156,7 +156,15 @@ class PoolSystem(BaseModel):
     # water rectangle origin in canonical coords
     origin_x_m: float = 2.0
     origin_y_m: float = 2.0
+    location: Literal["indoor", "outdoor"] = "indoor"
     input_basis: InputBasis = InputBasis.DEMONSTRATION_ASSUMPTION
+
+    @model_serializer(mode="wrap")
+    def serialize_compatible(self, handler):
+        data = handler(self)
+        if data.get("location") == "indoor":
+            data.pop("location", None)
+        return data
 
 
 class Brief(BaseModel):
@@ -224,6 +232,75 @@ class PoolProgram(ProgramModel):
     water_width_m: float = Field(gt=0, le=25)
     water_depth_m: float = Field(default=1.4, gt=0, le=5)
     level: Literal["basement", "ground"] = "basement"
+    location: Literal["indoor", "outdoor"] = "indoor"
+
+    @model_validator(mode="after")
+    def validate_location(self):
+        if self.location == "outdoor" and self.level != "ground":
+            raise ValueError("An outdoor pool belongs to ground-level site space, not the basement.")
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_compatible(self, handler):
+        data = handler(self)
+        if data.get("location") == "indoor":
+            data.pop("location", None)
+        return data
+
+
+class YardProgram(ProgramModel):
+    width_m: float | None = Field(default=None, ge=3, le=100)
+    depth_m: float = Field(default=8, ge=3, le=100)
+
+
+class GarageProgram(ProgramModel):
+    width_m: float = Field(default=3.6, ge=3, le=15)
+    depth_m: float = Field(default=6, ge=5, le=20)
+    height_m: float = Field(default=2.8, ge=2.5, le=4.5)
+    side: Literal["left", "right"] = "right"
+    vehicle_door_width_m: float = Field(default=2.6, ge=2.4, le=12)
+
+    @model_validator(mode="after")
+    def validate_vehicle_door(self):
+        if self.vehicle_door_width_m > self.width_m - .6:
+            raise ValueError("The vehicle door needs at least 0.30 m of wall at each side of the garage.")
+        return self
+
+
+class SiteSurface(ArchitecturalEntity):
+    name: str
+    polygon: list[list[float]]
+    holes: list[list[list[float]]] = Field(default_factory=list)
+    elevation_m: float = 0
+    material: Literal["grass", "paving"]
+
+
+class GarageGeometry(ArchitecturalEntity):
+    name: str = "Detached garage"
+    polygon: list[list[float]]
+    elevation_m: float = 0  # slab top / local ground datum
+    height_m: float = Field(gt=0)  # wall height to roof soffit
+    wall_thickness_m: float = Field(default=.20, gt=0)
+    slab_thickness_m: float = Field(default=.16, gt=0)
+    roof_thickness_m: float = Field(default=.18, gt=0)
+    vehicle_door_width_m: float = Field(gt=0)
+    vehicle_door_height_m: float = Field(default=2.2, gt=0)
+    vehicle_door_start: list[float]
+    vehicle_door_end: list[float]
+    side: Literal["left", "right"] = "right"
+
+
+class SiteLayout(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    revision_id: str
+    yard: SiteSurface | None = None
+    garage: GarageGeometry | None = None
+    driveway: SiteSurface | None = None
+    pool_deck: SiteSurface | None = None
+    context_polygon: list[list[float]]
+    coordinate_basis: str = "local_xy_z_up"
+    input_basis: InputBasis = InputBasis.DEMONSTRATION_ASSUMPTION
+    review_status: str = "unreviewed"
 
 
 class BuildingProgram(ProgramModel):
@@ -235,6 +312,8 @@ class BuildingProgram(ProgramModel):
     floors: list[FloorProgram] = Field(min_length=1, max_length=12)
     basement: FloorProgram | None = None
     pool: PoolProgram | None = None
+    yard: YardProgram | None = None
+    garage: GarageProgram | None = None
     roof_terrace_area_m2: float = Field(default=0, ge=0, le=3000)
     material_palette: Literal["limestone_oak", "warm_concrete", "white_stucco"] = "limestone_oak"
     design_notes: list[Annotated[str, Field(min_length=1, max_length=500)]] = Field(default_factory=list, max_length=12)
@@ -248,6 +327,14 @@ class BuildingProgram(ProgramModel):
         if self.roof_terrace_area_m2 and self.roof_terrace_area_m2 > (self.width_m - 3.0) * self.depth_m:
             raise ValueError("The requested roof terrace leaves insufficient area for its stair enclosure and connected access.")
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize_compatible(self, handler):
+        data = handler(self)
+        for key in ("yard", "garage"):
+            if data.get(key) is None:
+                data.pop(key, None)
+        return data
 
 
 class ProjectSnapshot(BaseModel):
@@ -270,12 +357,13 @@ class ProjectSnapshot(BaseModel):
     material_palette: Literal["limestone_oak", "warm_concrete", "white_stucco"] = "limestone_oak"
     building_program: BuildingProgram | None = None
     envelope_polygon: list[list[float]] | None = None
+    site_layout: SiteLayout | None = None
     content_hash: str = ""
 
     @model_serializer(mode="wrap")
     def serialize_compatible(self, handler):
         data = handler(self)
-        for key in ("building_program", "envelope_polygon"):
+        for key in ("building_program", "envelope_polygon", "site_layout"):
             if data.get(key) is None:
                 data.pop(key, None)
         return data
@@ -287,6 +375,8 @@ class ProjectSnapshot(BaseModel):
             excluded.add("building_program")
         if self.envelope_polygon is None:
             excluded.add("envelope_polygon")
+        if self.site_layout is None:
+            excluded.add("site_layout")
         # Loading a deployed 0.1 snapshot must not change its historical hash
         # just because this version knows additional optional schema fields.
         if self.schema_version == "0.1.0" and self.architecture is None:

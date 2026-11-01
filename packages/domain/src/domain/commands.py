@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 from .architecture import bounds, enrich_snapshot, rect, stable_id
-from .models import Assumption, BuildingProgram, Level, ProjectSnapshot, new_id
+from .models import Assumption, BuildingProgram, GarageProgram, Level, PoolProgram, PoolSystem, ProjectSnapshot, YardProgram, new_id
 
 # An execution bound for the current concept generator, not a planning,
 # zoning, fire-safety or structural allowance.
@@ -76,7 +76,22 @@ class UpgradeArchitecture(Command):
     type: Literal["upgrade_architecture"] = "upgrade_architecture"
 
 
-TypedCommand = Annotated[SetPoolDimensions | MoveSpace | MoveWall | SetTerraceArea | SetLevelHeight | SetMaterialPalette | AddLevel | RemoveLevel | DesignBuilding | UpgradeArchitecture,
+class SetYard(Command):
+    type: Literal["set_yard"] = "set_yard"
+    yard: YardProgram | None
+
+
+class SetGarage(Command):
+    type: Literal["set_garage"] = "set_garage"
+    garage: GarageProgram | None
+
+
+class SetOutdoorPool(Command):
+    type: Literal["set_outdoor_pool"] = "set_outdoor_pool"
+    pool: PoolProgram | None
+
+
+TypedCommand = Annotated[SetPoolDimensions | MoveSpace | MoveWall | SetTerraceArea | SetLevelHeight | SetMaterialPalette | AddLevel | RemoveLevel | DesignBuilding | UpgradeArchitecture | SetYard | SetGarage | SetOutdoorPool,
                          Field(discriminator="type")]
 COMMAND_ADAPTER = TypeAdapter(TypedCommand)
 
@@ -252,6 +267,8 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
     if len({cmd.command_id for cmd in commands}) != len(commands):
         raise CommandError("A command ID cannot occur twice in one batch.")
     snap = snapshot.model_copy(deep=True)
+    from .site import UNCHANGED, coordinate_site
+    yard_override, garage_override = UNCHANGED, UNCHANGED
     for cmd in commands:
         if isinstance(cmd, UpgradeArchitecture):
             from .legacy import upgrade_legacy_architecture
@@ -259,6 +276,31 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
                 upgrade_legacy_architecture(snap)
             except ValueError as exc:
                 raise CommandError(str(exc)) from exc
+        elif isinstance(cmd, SetYard):
+            yard_override = cmd.yard
+        elif isinstance(cmd, SetGarage):
+            garage_override = cmd.garage
+        elif isinstance(cmd, SetOutdoorPool):
+            if cmd.pool is None:
+                if snap.pool and snap.pool.location != "outdoor":
+                    raise CommandError("This action removes outdoor pools only; the indoor pool is preserved.")
+                snap.pool = None
+                snap.brief.pool = False
+            else:
+                if cmd.pool.location != "outdoor" or cmd.pool.level != "ground":
+                    raise CommandError("set_outdoor_pool requires location=outdoor and level=ground.")
+                ground = next((level for level in snap.levels if level.name == "ground"),None)
+                if ground is None:
+                    raise CommandError("An outdoor pool requires a ground datum.")
+                if snap.pool and snap.pool.location == "indoor":
+                    snap.assumptions.append(Assumption(field="site.pool_conversion",value={
+                        "previous_pool_level_id":snap.pool.level_id,
+                        "retained_former_hall_ids":[space.id for space in snap.spaces if space.use == "pool_hall" and space.level_id == snap.pool.level_id]},
+                        rationale="The water system moved outdoors. The former indoor hall's room geometry and identity remain unchanged; no interior remodel or change of use is assumed. Request an explicit floor redesign to repurpose it."))
+                snap.pool = PoolSystem(id=snap.pool.id if snap.pool else stable_id(snap.project_id,"site:pool"),
+                    level_id=ground.id,location="outdoor",water_length_m=cmd.pool.water_length_m,
+                    water_width_m=cmd.pool.water_width_m,water_depth_m=cmd.pool.water_depth_m)
+                snap.brief.pool = True
         elif isinstance(cmd, SetPoolDimensions):
             if all(getattr(cmd, field) is None for field in ("water_length_m", "water_width_m", "water_depth_m")):
                 raise CommandError("set_pool_dimensions stated no dimension")
@@ -268,6 +310,8 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
                 value = getattr(cmd, field)
                 if value is not None:
                     setattr(snap.pool, field, value)
+            if snap.pool.location == "outdoor":
+                continue  # The final site layout checks and centers the water/deck.
             hall = next((s for s in snap.spaces if s.use == "pool_hall" and s.level_id == snap.pool.level_id), None)
             if hall is None:
                 raise CommandError("The pool requires a host pool hall.")
@@ -355,6 +399,11 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
                 snap.revision_id=snapshot.revision_id
             except ValueError as exc:
                 raise CommandError(str(exc)) from exc
+    if yard_override is not UNCHANGED or garage_override is not UNCHANGED:
+        try:
+            coordinate_site(snap,yard=yard_override,garage=garage_override)
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
     if snap.building_program is not None:
         from .building import synchronize_program
         try:
@@ -365,4 +414,7 @@ def apply_commands(snapshot: ProjectSnapshot, raw_commands: list[dict]) -> Proje
     snap.revision_id = new_id()
     snap.revision_number = snapshot.revision_number + 1
     snap.created_at = datetime.now(timezone.utc)
-    return enrich_snapshot(snap).with_hash()
+    try:
+        return enrich_snapshot(snap).with_hash()
+    except ValueError as exc:
+        raise CommandError(str(exc)) from exc

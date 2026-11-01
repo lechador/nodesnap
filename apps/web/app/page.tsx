@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "./components/Icon";
 import NewDesign from "./components/NewDesign";
 import StudioHome from "./components/StudioHome";
+import SiteControls from "./components/SiteControls";
 import { useStudio } from "./lib/useStudio";
 import { useMicrophone } from "./lib/useMicrophone";
 import { area, areaLabel, bounds, length, title } from "./lib/format";
@@ -12,6 +13,12 @@ import type { BuildingSnapshot, Result, Units } from "./lib/types";
 const Plan2D = dynamic(() => import("./Plan2D"), {
   ssr: false,
   loading: () => <div className="view-loading">Preparing the drawing…</div>,
+});
+const SitePlan = dynamic(() => import("./SitePlan"), {
+  ssr: false,
+  loading: () => (
+    <div className="view-loading">Preparing the site drawing…</div>
+  ),
 });
 const Villa3D = dynamic(() => import("./Villa3D"), {
   ssr: false,
@@ -22,10 +29,11 @@ const Villa3D = dynamic(() => import("./Villa3D"), {
     </div>
   ),
 });
-type View = "3d" | "plan" | "structure" | "systems" | "documents";
+type View = "3d" | "plan" | "site" | "structure" | "systems" | "documents";
 const views: { id: View; label: string; icon: IconName }[] = [
   { id: "3d", label: "3D model", icon: "cube" },
   { id: "plan", label: "Floor plan", icon: "plan" },
+  { id: "site", label: "Site plan", icon: "site" },
   { id: "structure", label: "Structure", icon: "grid" },
   { id: "systems", label: "Systems", icon: "settings" },
   { id: "documents", label: "Documents", icon: "file" },
@@ -286,7 +294,11 @@ export default function Home() {
   const canReplan = livingLevels.some((l) => l.name === level);
   const prompts = [
     "Add another level",
-    "Redesign this as a three-bedroom house",
+    ...(!snap?.site_layout?.yard
+      ? ["Add a small yard"]
+      : !snap?.site_layout?.garage
+        ? ["Add a detached garage"]
+        : ["Make the yard deeper"]),
     ...(snap?.pool
       ? ["Make the pool 10 metres long"]
       : ["Use warm concrete finishes"]),
@@ -576,7 +588,7 @@ export default function Home() {
             <p>
               {snap.building_program
                 ? `${title(snap.building_program.building_use)} · ${snap.building_program.width_m} × ${snap.building_program.depth_m} m footprint.`
-                : "A contemporary NYC villa with an indoor pool and a roof terrace."}
+                : `A contemporary NYC villa${snap.pool ? ` with an ${snap.pool.location === "outdoor" ? "outdoor" : "indoor"} pool` : ""}${snap.roof_terrace_area_m2 ? " and a roof terrace" : ""}.`}
             </p>
             <div className="brief-facts">
               <span>
@@ -584,7 +596,15 @@ export default function Home() {
                 {livingLevels.length === 1 ? "floor" : "floors"}
               </span>
               {bedroomCount > 0 && <span>{bedroomCount} bedrooms</span>}
-              <span>{snap.pool ? "Indoor pool" : "Concept layout"}</span>
+              <span>
+                {snap.pool
+                  ? snap.pool.location === "outdoor"
+                    ? "Outdoor pool"
+                    : "Indoor pool"
+                  : "Concept layout"}
+              </span>
+              {snap.site_layout?.yard && <span>Yard</span>}
+              {snap.site_layout?.garage && <span>Garage</span>}
             </div>
             <div className="site-note">
               <Icon name="info" size={13} />
@@ -850,7 +870,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {(view === "3d" || view === "plan") && (
+            {(view === "3d" || view === "plan" || view === "site") && (
               <div className="model-stage">
                 <div className="model-caption">
                   <h1>
@@ -860,12 +880,16 @@ export default function Home() {
                         : mode === "exploded"
                           ? "Every level, connected."
                           : `${currentLevel?.label}. Opened up.`
-                      : `${currentLevel?.label} plan.`}
+                      : view === "site"
+                        ? "A home beyond its walls."
+                        : `${currentLevel?.label} plan.`}
                   </h1>
                   <p>
                     {view === "3d"
                       ? "Explore the architecture. Make it yours."
-                      : "Precise geometry. One coordinated model."}
+                      : view === "site"
+                        ? "House, yard and garage. One saved design."
+                        : "Precise geometry. One coordinated model."}
                   </p>
                 </div>
                 {!snap.architecture && (
@@ -906,6 +930,8 @@ export default function Home() {
                     materialMode={material}
                     replayKey={replay}
                   />
+                ) : view === "site" ? (
+                  <SitePlan snap={snap} units={units} />
                 ) : (
                   <Plan2D
                     snap={snap}
@@ -1093,44 +1119,52 @@ export default function Home() {
                 </section>
               </div>
             )}
-            {(view === "3d" || view === "plan") && (
+            {(view === "3d" || view === "plan" || view === "site") && (
               <div className="floor-bar">
-                <div className="floor-selector">
-                  <Icon name="layers" size={17} />
-                  {snap.levels.map((l) => (
+                {view === "site" ? (
+                  <span className="site-context-label">
+                    Site overview · assumed context
+                  </span>
+                ) : (
+                  <div className="floor-selector">
+                    <Icon name="layers" size={17} />
+                    {snap.levels.map((l) => (
+                      <button
+                        key={l.id}
+                        ref={l.name === level ? activeFloorButton : undefined}
+                        className={level === l.name ? "active" : ""}
+                        aria-pressed={level === l.name}
+                        onClick={() => chooseFloor(l.name)}
+                      >
+                        <span>
+                          {l.name === "roof"
+                            ? "Roof"
+                            : l.label
+                                .replace(" floor", "")
+                                .replace("Floor", "")}
+                        </span>
+                        <small>
+                          {l.elevation_m >= 0 ? "+" : ""}
+                          {l.elevation_m.toFixed(2)} m
+                        </small>
+                      </button>
+                    ))}
                     <button
-                      key={l.id}
-                      ref={l.name === level ? activeFloorButton : undefined}
-                      className={level === l.name ? "active" : ""}
-                      aria-pressed={level === l.name}
-                      onClick={() => chooseFloor(l.name)}
+                      className="add-level-button"
+                      aria-label="Add another level"
+                      title="Add a floor below the roof using the top floor’s layout"
+                      disabled={!!busy}
+                      onClick={() =>
+                        void studio.command(
+                          [{ type: "add_level" }],
+                          "Adding a level",
+                        )
+                      }
                     >
-                      <span>
-                        {l.name === "roof"
-                          ? "Roof"
-                          : l.label.replace(" floor", "").replace("Floor", "")}
-                      </span>
-                      <small>
-                        {l.elevation_m >= 0 ? "+" : ""}
-                        {l.elevation_m.toFixed(2)} m
-                      </small>
+                      <Icon name="plus" size={17} />
                     </button>
-                  ))}
-                  <button
-                    className="add-level-button"
-                    aria-label="Add another level"
-                    title="Add a floor below the roof using the top floor’s layout"
-                    disabled={!!busy}
-                    onClick={() =>
-                      void studio.command(
-                        [{ type: "add_level" }],
-                        "Adding a level",
-                      )
-                    }
-                  >
-                    <Icon name="plus" size={17} />
-                  </button>
-                </div>
+                  </div>
+                )}
                 <label className="unit-picker">
                   <span className="sr-only">Display units</span>
                   <select
@@ -1325,42 +1359,63 @@ export default function Home() {
                       </p>
                     </div>
                   )}
-                {currentLevel?.id === snap.pool?.level_id && snap.pool && (
-                  <div className="edit-block">
-                    <h3>Pool dimensions</h3>
-                    <label>
-                      Water length (m)
-                      <div className="input-with-action">
-                        <input
-                          aria-label="Pool water length in metres"
-                          type="number"
-                          min="1"
-                          max={snap.building_program ? 50 : 15}
-                          step=".1"
-                          value={poolLength}
-                          onChange={(e) =>
-                            setPoolDraft({
-                              revision: snap.revision_id,
-                              value: e.target.value,
-                            })
-                          }
-                        />
-                        <button disabled={!!busy} onClick={applyPool}>
-                          Apply
-                        </button>
-                      </div>
-                    </label>
-                    <Field
-                      label="Width"
-                      value={length(snap.pool.water_width_m, units)}
-                    />
-                    <Field
-                      label="Water depth"
-                      value={length(snap.pool.water_depth_m, units)}
-                    />
-                    <p>Flat-bottom basin · demonstration assumption</p>
-                  </div>
-                )}
+                <SiteControls
+                  key={snap.revision_id}
+                  snap={snap}
+                  units={units}
+                  disabled={!!busy || mic.state !== "idle"}
+                  error={error}
+                  onCommand={(commands, label) =>
+                    void studio.command(commands, label)
+                  }
+                  onPlan={() => {
+                    setView("site");
+                    setMobileTab("model");
+                  }}
+                />
+                {(currentLevel?.id === snap.pool?.level_id ||
+                  view === "site") &&
+                  snap.pool && (
+                    <div className="edit-block">
+                      <h3>
+                        {snap.pool.location === "outdoor"
+                          ? "Outdoor pool"
+                          : "Indoor pool"}{" "}
+                        dimensions
+                      </h3>
+                      <label>
+                        Water length (m)
+                        <div className="input-with-action">
+                          <input
+                            aria-label="Pool water length in metres"
+                            type="number"
+                            min="1"
+                            max={snap.building_program ? 50 : 15}
+                            step=".1"
+                            value={poolLength}
+                            onChange={(e) =>
+                              setPoolDraft({
+                                revision: snap.revision_id,
+                                value: e.target.value,
+                              })
+                            }
+                          />
+                          <button disabled={!!busy} onClick={applyPool}>
+                            Apply
+                          </button>
+                        </div>
+                      </label>
+                      <Field
+                        label="Width"
+                        value={length(snap.pool.water_width_m, units)}
+                      />
+                      <Field
+                        label="Water depth"
+                        value={length(snap.pool.water_depth_m, units)}
+                      />
+                      <p>Flat-bottom basin · demonstration assumption</p>
+                    </div>
+                  )}
                 {aboveLevel && currentLevel && (
                   <div className="edit-block">
                     <h3>Floor-to-floor height</h3>

@@ -89,16 +89,22 @@ def cover_page(c: canvas.Canvas, page_size, snap, results: list[dict]):
     y = header(c, page_size, "COVER", "Project index and design basis", snap)
     prof = JurisdictionProfile()
     plans = " · ".join(f"{sheet} {level.label}" for sheet, level in plan_sheets(snap))
+    layout = getattr(snap, "site_layout", None)
+    if layout:
+        x0, y0, x1, y1 = Polygon(layout.context_polygon).bounds
+        context = f"coordinated concept extent {x1-x0:g} x {y1-y0:g} m (not a survey)"
+    else:
+        context = f"declared context {snap.site.context_width_m:g} x {snap.site.context_depth_m:g} m (not a survey)"
     items = [
         "Product promise: homeowner intent -> coordinated editable design -> traceable calculations -> professional review package.",
-        f"Site mode: {snap.site.mode} — {snap.site.name}; real address: {snap.site.real_address or 'none'}; BBL: {snap.site.bbl or 'none'}; declared context {snap.site.context_width_m:g} x {snap.site.context_depth_m:g} m (not a survey)",
+        f"Site mode: {snap.site.mode} — {snap.site.name}; real address: {snap.site.real_address or 'none'}; BBL: {snap.site.bbl or 'none'}; {context}",
         f"Jurisdiction: {prof.authority} · profile {prof.profile_version}",
         f"Construction codes: {prof.construction_codes}",
         f"Structural loading basis: {prof.structural_loading}",
         f"Energy: {prof.energy}",
         f"Electrical: {prof.electrical}",
         f"Authority process: {prof.filing}",
-        "Sheet index: COVER (this sheet) · C-101 site context",
+        "Sheet index: COVER (this sheet) · C-101 " + ("house, yard and outbuildings" if layout else "site context"),
         f"Architectural plans: {plans}",
         f"CALC-101 {'pool + ' if snap.pool else ''}area schedule (continuations as needed) · S-101 structure · F-101 foundations · MPE-101 services (M/P/E/EN) · REG-101 registers",
         "Approval fields: DOB job number [ intentionally blank ] · Professional signature/seal [ intentionally blank — never simulated ]",
@@ -119,6 +125,9 @@ def cover_page(c: canvas.Canvas, page_size, snap, results: list[dict]):
 
 
 def site_page(c: canvas.Canvas, page_size, snap):
+    if getattr(snap, "site_layout", None) is not None:
+        from .site import site_plan_page
+        return site_plan_page(c, page_size, snap)
     y = header(c, page_size, "C-101", "Site context (synthetic demonstration)", snap)
     w, h = page_size
     region = drawing_region(snap)

@@ -19,3 +19,6 @@ The desktop shell is a three-column architectural studio. Mobile switches Model/
 
 ## Direction provenance
 The user pinned architecture/chat priority and direct implementation; the master specification pinned charcoal navigation, a light drawing canvas and refined architectural materials. These commitments override an incompatible concept roll. The parent conversation records a prior concept-seed run with key `54a961d1`, candidate 6 (architectural competition exhibition), which informed the assembly and exhibition treatment within that shell. The original command-output artifact was not retained, so this note is parent-corroborated history, not a recreated or independently auditable roll record. No approved image composition exists for this code-led build, and no reroll is represented.
+
+## Private-home site extension
+A dedicated Site plan and the Yard & garage inspector bring outdoor space into the existing studio. Canonical lawn, driveway, pool/deck and detached garage geometry appear in 3D, exact measured plans and exports. Yard views frame the backyard first; front/back switching preserves orientation control. No surveyed parcel, road connection, compliant setback or engineering capacity is implied. Mobile keeps dimensions editable and shows rejected-size explanations beside controls.

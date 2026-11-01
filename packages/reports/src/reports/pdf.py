@@ -158,7 +158,7 @@ def _plan_page(c: canvas.Canvas, snap: ProjectSnapshot, level: Level, sheet: str
         c.line(*point([ax,y1-.2]),*point([ax,y0+stair.landing_depth_m+.3]))
         p=point([ax,y0+stair.landing_depth_m+.3])
         c.line(p[0],p[1],p[0]-3,p[1]+6);c.line(p[0],p[1],p[0]+3,p[1]+6)
-    if snap.pool and snap.pool.level_id == level.id:
+    if snap.pool and getattr(snap.pool, "location", "indoor") == "indoor" and snap.pool.level_id == level.id:
         pool=snap.pool
         c.setStrokeColorRGB(.22,.48,.54); c.setFillColorRGB(.84,.93,.94);c.setLineWidth(1)
         px,py=point([pool.origin_x_m,pool.origin_y_m])
@@ -176,7 +176,7 @@ def _plan_page(c: canvas.Canvas, snap: ProjectSnapshot, level: Level, sheet: str
     # Compact room keys match the adjacent full schedule; labels never claim a
     # target allowance as a measured room dimension.
     for index,space in enumerate(spaces):
-        if space.use=='pool_hall' and snap.pool and snap.pool.level_id==level.id:
+        if space.use=='pool_hall' and snap.pool and getattr(snap.pool, "location", "indoor") == "indoor" and snap.pool.level_id==level.id:
             continue  # Its key is carried by the water label; avoid centered text collisions.
         if space.use=='stairs_service' and any(stair.lower_level_id==level.id for stair in (architecture.stairs if architecture else [])):
             continue
@@ -342,10 +342,17 @@ def _extra_pages(c, snap, results):
     ]
     for e in hv.get("envelope_conduction", []):
         items.append(f"   {e['element']}: A={e['area_m2']:.2f} m2, U={e['u_w_m2k']:.2f} W/m2K, Q={e['heat_loss_w']:,.0f} W")
+    outdoor_pool = snap.pool and getattr(snap.pool, "location", "indoor") == "outdoor"
     items += [
         f"Drainage: roof runoff scenario {quantity(dr, 'runoff_l_s', 2)} L/s (C={dr.get('runoff_coefficient_assumed')}, rainfall {dr.get('rainfall_mm_h_assumed')} mm/h, both assumed). {dr.get('note', '')}",
-        ("Pool environment/evaporation, " if snap.pool else "No pool is modeled. ") + "Ventilation rates, equipment selection, demand factors, ampacity, panel schedules, NYCECC pathway and hydraulic sizing: research_required — no values invented for this sheet.",
+        ("Outdoor pool evaporation/heat balance, " if outdoor_pool else "Pool environment/evaporation, " if snap.pool else "No pool is modeled. ") + "Ventilation rates, equipment selection, demand factors, ampacity, panel schedules, NYCECC pathway and hydraulic sizing: research_required — no values invented for this sheet.",
     ]
+    if outdoor_pool:
+        items.append("Outdoor pool: indoor dehumidification is not applicable. Outdoor evaporation and heat balance are not calculated.")
+    if getattr(snap, "site_layout", None):
+        items.append(hv.get("note", ""))
+        if snap.site_layout.garage:
+            items.append(f"Detached garage: unconditioned and excluded from house conduction; roof {quantity(dr, 'garage_roof_area_m2', 2)} m2 is included as its own roof-runoff catchment. Garage and yard electrical/plumbing/ventilation services are not sized.")
     lines(c, PAGE, y, items)
     c.showPage()
     # REG-101 registers
@@ -358,6 +365,11 @@ def _extra_pages(c, snap, results):
         items.append(f"   - {r['method_id']}: state={r['method_state']}, execution={r['execution_status']}, check={r['check_outcome']}")
         for iss in r.get("issues", []):
             items.append(f"       OPEN [{iss['code']}] {iss.get('field','')}: {iss['message']}")
+    if outdoor_pool:
+        from engineering.registry import methods_for_snapshot
+        pool_method = next(method for method in methods_for_snapshot(snap) if method.id == "pool_environment")
+        items.append(f"   - {pool_method.id}: state={pool_method.method_state.value}; {pool_method.purpose}")
+        items.append(f"       Source gap: {pool_method.source}")
     items.append("Professional review: unreviewed. Authority process: not_submitted. Signature/seal/job-number fields are intentionally blank.")
     lines(c, PAGE, y, items)
     c.showPage()
@@ -393,6 +405,8 @@ def build_review_package(snap: ProjectSnapshot, results: list[dict] | None = Non
             f"Max hydrostatic pressure = {q['max_hydrostatic_pressure_pa']:.2f} Pa",
             f"Method: pool_quantities (implemented; physics only — not pool-shell design). Input basis: {snap.pool.input_basis.value}.",
         ]
+        if getattr(snap.pool, "location", "indoor") == "outdoor":
+            lines.insert(1, "Location: outdoor — water geometry is on C-101; it is not an indoor pool hall or enclosed floor area.")
         for ln in lines:
             c.drawString(inch, y, ln); y -= 0.27 * inch
     else:

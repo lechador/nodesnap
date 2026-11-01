@@ -1,3 +1,4 @@
+import type { SiteGeometry } from "./site-model";
 /** Canonical XY/Z-up to the renderer's XZ/Y-up adapter. All dimensions are SI.
  * Presentation joinery/furniture never participates in measurements or analysis.
  */
@@ -68,8 +69,10 @@ export interface RenderSnapshot {
   revision_number: number;
   levels: RenderLevel[];
   spaces: RenderSpace[];
+  site_layout?: SiteGeometry | null;
   material_palette?: "limestone_oak" | "warm_concrete" | "white_stucco";
   pool?: {
+    location?: "indoor" | "outdoor";
     level_id: string;
     origin_x_m: number;
     origin_y_m: number;
@@ -95,7 +98,9 @@ export type Surface =
   | "timber"
   | "linen"
   | "water"
-  | "cap";
+  | "cap"
+  | "grass"
+  | "ground";
 export type Point3 = [number, number, number];
 export interface BoxPart {
   position: Point3;
@@ -134,11 +139,24 @@ export function boundsOf(points: number[][]): Bounds {
   };
 }
 
-export function modelBounds(snapshot: RenderSnapshot): Bounds {
+export function modelBounds(
+  snapshot: RenderSnapshot,
+  includeSite = true,
+): Bounds {
   const rings =
     snapshot.architecture?.slabs.map((s) => s.polygon) ??
     snapshot.spaces.map((s) => s.polygon);
-  return boundsOf(rings.flat());
+  return boundsOf([
+    ...rings.flat(),
+    ...(includeSite && snapshot.site_layout
+      ? [
+          snapshot.site_layout.yard,
+          snapshot.site_layout.garage,
+          snapshot.site_layout.driveway,
+          snapshot.site_layout.pool_deck,
+        ].flatMap((feature) => feature?.polygon ?? [])
+      : []),
+  ]);
 }
 
 /** Actual displayed heights, including raised roofs, stair covers and exploded offsets. */
@@ -191,9 +209,34 @@ export function sceneVerticalBounds(
       if (stair.lower_level_id === level.id)
         max = Math.max(max, base + stair.riser_count * stair.riser_height_m);
     }
-    if (snapshot.pool?.level_id === level.id)
+    if (
+      snapshot.pool?.location !== "outdoor" &&
+      snapshot.pool?.level_id === level.id
+    )
       min = Math.min(min, base - snapshot.pool.water_depth_m);
   });
+  const showSite =
+    mode !== "cutaway" ||
+    snapshot.levels.find((l) => l.id === levelId)?.name === "ground";
+  if (showSite && snapshot.site_layout) {
+    const garage = snapshot.site_layout.garage;
+    if (garage) {
+      min = Math.min(min, garage.elevation_m - garage.slab_thickness_m);
+      max = Math.max(
+        max,
+        garage.elevation_m +
+          (mode === "cutaway"
+            ? Math.min(1.15, garage.height_m)
+            : garage.height_m + garage.roof_thickness_m),
+      );
+    }
+    if (snapshot.pool?.location === "outdoor") {
+      const datum =
+        snapshot.levels.find((l) => l.id === snapshot.pool?.level_id)
+          ?.elevation_m ?? 0;
+      min = Math.min(min, datum - snapshot.pool.water_depth_m);
+    }
+  }
   if (!Number.isFinite(min)) return { min: 0, max: 1, height: 1 };
   return { min, max, height: max - min };
 }

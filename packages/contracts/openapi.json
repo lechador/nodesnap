@@ -1801,6 +1801,26 @@
               }
             ]
           },
+          "yard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/YardProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "garage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GarageProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "roof_terrace_area_m2": {
             "type": "number",
             "maximum": 3000.0,
@@ -2158,6 +2178,149 @@
         ],
         "title": "FloorProgram"
       },
+      "GarageGeometry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": "Detached garage"
+          },
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon"
+          },
+          "elevation_m": {
+            "type": "number",
+            "title": "Elevation M",
+            "default": 0
+          },
+          "height_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height M"
+          },
+          "wall_thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Wall Thickness M",
+            "default": 0.2
+          },
+          "slab_thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Slab Thickness M",
+            "default": 0.16
+          },
+          "roof_thickness_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Roof Thickness M",
+            "default": 0.18
+          },
+          "vehicle_door_width_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Vehicle Door Width M"
+          },
+          "vehicle_door_height_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Vehicle Door Height M",
+            "default": 2.2
+          },
+          "vehicle_door_start": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Vehicle Door Start"
+          },
+          "vehicle_door_end": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Vehicle Door End"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ],
+            "title": "Side",
+            "default": "right"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "polygon",
+          "height_m",
+          "vehicle_door_width_m",
+          "vehicle_door_start",
+          "vehicle_door_end"
+        ],
+        "title": "GarageGeometry"
+      },
+      "GarageProgram": {
+        "properties": {
+          "width_m": {
+            "type": "number",
+            "maximum": 15.0,
+            "minimum": 3.0,
+            "title": "Width M",
+            "default": 3.6
+          },
+          "depth_m": {
+            "type": "number",
+            "maximum": 20.0,
+            "minimum": 5.0,
+            "title": "Depth M",
+            "default": 6
+          },
+          "height_m": {
+            "type": "number",
+            "maximum": 4.5,
+            "minimum": 2.5,
+            "title": "Height M",
+            "default": 2.8
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ],
+            "title": "Side",
+            "default": "right"
+          },
+          "vehicle_door_width_m": {
+            "type": "number",
+            "maximum": 12.0,
+            "minimum": 2.4,
+            "title": "Vehicle Door Width M",
+            "default": 2.6
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "GarageProgram"
+      },
       "GenerateBody": {
         "properties": {
           "base_revision_id": {
@@ -2342,6 +2505,15 @@
             ],
             "title": "Level",
             "default": "basement"
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "indoor",
+              "outdoor"
+            ],
+            "title": "Location",
+            "default": "indoor"
           }
         },
         "additionalProperties": false,
@@ -2386,6 +2558,15 @@
             "type": "number",
             "title": "Origin Y M",
             "default": 2.0
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "indoor",
+              "outdoor"
+            ],
+            "title": "Location",
+            "default": "indoor"
           },
           "input_basis": {
             "$ref": "#/components/schemas/InputBasis",
@@ -2541,6 +2722,16 @@
               }
             ],
             "title": "Envelope Polygon"
+          },
+          "site_layout": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteLayout"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "content_hash": {
             "type": "string",
@@ -2709,6 +2900,144 @@
         },
         "type": "object",
         "title": "SiteContext"
+      },
+      "SiteLayout": {
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "yard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteSurface"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "garage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GarageGeometry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "driveway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteSurface"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pool_deck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteSurface"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "context_polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Context Polygon"
+          },
+          "coordinate_basis": {
+            "type": "string",
+            "title": "Coordinate Basis",
+            "default": "local_xy_z_up"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "review_status": {
+            "type": "string",
+            "title": "Review Status",
+            "default": "unreviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision_id",
+          "context_polygon"
+        ],
+        "title": "SiteLayout"
+      },
+      "SiteSurface": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "input_basis": {
+            "$ref": "#/components/schemas/InputBasis",
+            "default": "demonstration_assumption"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon"
+          },
+          "holes": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Holes"
+          },
+          "elevation_m": {
+            "type": "number",
+            "title": "Elevation M",
+            "default": 0
+          },
+          "material": {
+            "type": "string",
+            "enum": [
+              "grass",
+              "paving"
+            ],
+            "title": "Material"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "polygon",
+          "material"
+        ],
+        "title": "SiteSurface"
       },
       "Slab": {
         "properties": {
@@ -3156,6 +3485,33 @@
           "material"
         ],
         "title": "WallAssembly"
+      },
+      "YardProgram": {
+        "properties": {
+          "width_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 3.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width M"
+          },
+          "depth_m": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 3.0,
+            "title": "Depth M",
+            "default": 8
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "YardProgram"
       }
     }
   }

@@ -251,6 +251,12 @@ def _roof_spaces(project_id, namespace, roof, width, depth, terrace_area):
 
 def build_building(project_id: str, program: BuildingProgram | dict, *, namespace: str = "building") -> ProjectSnapshot:
     program = BuildingProgram.model_validate(program).model_copy(deep=True)
+    source_floors = ([program.basement] if program.basement else []) + program.floors
+    if any(room.use.casefold() in {"garage", "yard", "garden", "outdoor_pool"}
+           for floor in source_floors for room in floor.rooms):
+        raise BuildingGenerationError("Yards and detached garages must use the typed yard/garage program fields, not indoor rooms. Outdoor pools use pool.location=outdoor.")
+    if program.pool and program.pool.location == "outdoor" and any(room.use == "pool_hall" for floor in source_floors for room in floor.rooms):
+        raise BuildingGenerationError("An outdoor pool does not require an indoor pool hall. Remove that room or request an indoor pool.")
     width, depth = program.width_m, program.depth_m
     floors = []
     if program.basement:
@@ -264,7 +270,7 @@ def build_building(project_id: str, program: BuildingProgram | dict, *, namespac
     roof = Level(id=stable_id(project_id,f"{namespace}:level:roof"),name="roof",label="Roof / terrace" if program.roof_terrace_area_m2 else "Roof",elevation_m=elevation)
     spaces, families = [], {}
     for level, (_, floor, _) in zip(levels, floors):
-        host_pool = program.pool if program.pool and program.pool.level == level.name else None
+        host_pool = program.pool if program.pool and program.pool.location == "indoor" and program.pool.level == level.name else None
         generated,family = _floor_spaces(project_id,namespace,level,floor,width,depth,host_pool)
         spaces.extend(generated); families[level.name] = family
     levels.append(roof)
@@ -272,11 +278,12 @@ def build_building(project_id: str, program: BuildingProgram | dict, *, namespac
     pool = None
     if program.pool:
         level = next(l for l in levels if l.name == program.pool.level)
-        hall = next(s for s in spaces if s.level_id == level.id and s.use == "pool_hall")
-        x0,y0,x1,y1 = bounds(hall)
+        hall = next((s for s in spaces if s.level_id == level.id and s.use == "pool_hall"),None)
+        x0,y0,x1,y1 = bounds(hall) if hall else (0,0,0,0)
         pool = PoolSystem(id=stable_id(project_id,f"{namespace}:pool"),level_id=level.id,
                           water_length_m=program.pool.water_length_m,water_width_m=program.pool.water_width_m,
                           water_depth_m=program.pool.water_depth_m,
+                          location=program.pool.location,
                           origin_x_m=(x0+x1-program.pool.water_length_m)/2,
                           origin_y_m=(y0+y1-program.pool.water_width_m)/2)
     notes = [Assumption(field="building_program",value=program.model_dump(mode="json"),
@@ -322,7 +329,7 @@ def regenerate_program_floor(snapshot, level_name, rooms):
                      area_basis=_room_basis(snapshot,room["name"],room["use"],room["target_area_m2"],level.id,
                                             new_basis="user_supplied")) for room in rooms]+supports)
         x0,y0,x1,y1 = envelope_bounds(snapshot)
-        pool = snapshot.pool.model_copy(deep=True) if snapshot.pool and snapshot.pool.level_id == level.id else None
+        pool = snapshot.pool.model_copy(deep=True) if snapshot.pool and snapshot.pool.location == "indoor" and snapshot.pool.level_id == level.id else None
         generated,family = _floor_spaces(snapshot.project_id,"building",level,floor,x1-x0,y1-y0,pool,existing)
         output = {"spaces":[s.model_copy(deep=True) for s in snapshot.spaces if s.level_id != level.id]+generated,
                   "solver_status":"FEASIBLE","settings":{"family":family,"method":"deterministic_bounded_packing","target_area_basis":"wall_centerline_zone"}}
@@ -395,7 +402,7 @@ def synchronize_program(snapshot):
     program.roof_terrace_area_m2=snapshot.roof_terrace_area_m2 or 0
     if snapshot.pool:
         name=next(l.name for l in snapshot.levels if l.id==snapshot.pool.level_id)
-        program.pool=PoolProgram(level=name,water_length_m=snapshot.pool.water_length_m,
+        program.pool=PoolProgram(level=name,location=snapshot.pool.location,water_length_m=snapshot.pool.water_length_m,
                                  water_width_m=snapshot.pool.water_width_m,water_depth_m=snapshot.pool.water_depth_m)
     else:
         program.pool=None

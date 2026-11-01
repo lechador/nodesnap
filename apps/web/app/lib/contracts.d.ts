@@ -532,6 +532,8 @@ export interface components {
             floors: components["schemas"]["FloorProgram"][];
             basement?: components["schemas"]["FloorProgram"] | null;
             pool?: components["schemas"]["PoolProgram"] | null;
+            yard?: components["schemas"]["YardProgram"] | null;
+            garage?: components["schemas"]["GarageProgram"] | null;
             /**
              * Roof Terrace Area M2
              * @default 0
@@ -640,6 +642,88 @@ export interface components {
             /** Rooms */
             rooms: components["schemas"]["RoomProgram"][];
         };
+        /** GarageGeometry */
+        GarageGeometry: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /**
+             * Name
+             * @default Detached garage
+             */
+            name: string;
+            /** Polygon */
+            polygon: number[][];
+            /**
+             * Elevation M
+             * @default 0
+             */
+            elevation_m: number;
+            /** Height M */
+            height_m: number;
+            /**
+             * Wall Thickness M
+             * @default 0.2
+             */
+            wall_thickness_m: number;
+            /**
+             * Slab Thickness M
+             * @default 0.16
+             */
+            slab_thickness_m: number;
+            /**
+             * Roof Thickness M
+             * @default 0.18
+             */
+            roof_thickness_m: number;
+            /** Vehicle Door Width M */
+            vehicle_door_width_m: number;
+            /**
+             * Vehicle Door Height M
+             * @default 2.2
+             */
+            vehicle_door_height_m: number;
+            /** Vehicle Door Start */
+            vehicle_door_start: number[];
+            /** Vehicle Door End */
+            vehicle_door_end: number[];
+            /**
+             * Side
+             * @default right
+             * @enum {string}
+             */
+            side: "left" | "right";
+        };
+        /** GarageProgram */
+        GarageProgram: {
+            /**
+             * Width M
+             * @default 3.6
+             */
+            width_m: number;
+            /**
+             * Depth M
+             * @default 6
+             */
+            depth_m: number;
+            /**
+             * Height M
+             * @default 2.8
+             */
+            height_m: number;
+            /**
+             * Side
+             * @default right
+             * @enum {string}
+             */
+            side: "left" | "right";
+            /**
+             * Vehicle Door Width M
+             * @default 2.6
+             */
+            vehicle_door_width_m: number;
+        };
         /** GenerateBody */
         GenerateBody: {
             /** Base Revision Id */
@@ -717,6 +801,12 @@ export interface components {
              * @enum {string}
              */
             level: "basement" | "ground";
+            /**
+             * Location
+             * @default indoor
+             * @enum {string}
+             */
+            location: "indoor" | "outdoor";
         };
         /** PoolSystem */
         PoolSystem: {
@@ -749,6 +839,12 @@ export interface components {
              * @default 2
              */
             origin_y_m: number;
+            /**
+             * Location
+             * @default indoor
+             * @enum {string}
+             */
+            location: "indoor" | "outdoor";
             /** @default demonstration_assumption */
             input_basis: components["schemas"]["InputBasis"];
         };
@@ -815,6 +911,7 @@ export interface components {
             building_program?: components["schemas"]["BuildingProgram"] | null;
             /** Envelope Polygon */
             envelope_polygon?: number[][] | null;
+            site_layout?: components["schemas"]["SiteLayout"] | null;
             /**
              * Content Hash
              * @default
@@ -891,6 +988,52 @@ export interface components {
             context_depth_m: number;
             /** @default demonstration_assumption */
             input_basis: components["schemas"]["InputBasis"];
+        };
+        /** SiteLayout */
+        SiteLayout: {
+            /** Revision Id */
+            revision_id: string;
+            yard?: components["schemas"]["SiteSurface"] | null;
+            garage?: components["schemas"]["GarageGeometry"] | null;
+            driveway?: components["schemas"]["SiteSurface"] | null;
+            pool_deck?: components["schemas"]["SiteSurface"] | null;
+            /** Context Polygon */
+            context_polygon: number[][];
+            /**
+             * Coordinate Basis
+             * @default local_xy_z_up
+             */
+            coordinate_basis: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /**
+             * Review Status
+             * @default unreviewed
+             */
+            review_status: string;
+        };
+        /** SiteSurface */
+        SiteSurface: {
+            /** Id */
+            id: string;
+            /** @default demonstration_assumption */
+            input_basis: components["schemas"]["InputBasis"];
+            /** Name */
+            name: string;
+            /** Polygon */
+            polygon: number[][];
+            /** Holes */
+            holes?: number[][][];
+            /**
+             * Elevation M
+             * @default 0
+             */
+            elevation_m: number;
+            /**
+             * Material
+             * @enum {string}
+             */
+            material: "grass" | "paving";
         };
         /** Slab */
         Slab: {
@@ -1058,6 +1201,16 @@ export interface components {
              * @default not_determined
              */
             structural_role: string;
+        };
+        /** YardProgram */
+        YardProgram: {
+            /** Width M */
+            width_m?: number | null;
+            /**
+             * Depth M
+             * @default 8
+             */
+            depth_m: number;
         };
     };
     responses: never;
